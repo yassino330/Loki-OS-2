@@ -143,7 +143,7 @@ grep -Eq 'autologin-user[[:space:]]*=[[:space:]]*loki' "$OUTPUT_DIR/lightdm-effe
 }
 test -x "$ROOTFS/usr/local/bin/lokios-session"
 test -f "$ROOTFS/usr/share/xsessions/lokios.desktop"
-getent --root "$ROOTFS" passwd loki >/dev/null
+grep -q '^loki:[^:]*:[0-9][0-9]*:[0-9][0-9]*:' "$ROOTFS/etc/passwd"
 
 cat > "$ROOTFS/etc/initramfs-tools/modules" <<'MODULES'
 # Built-in live filesystem support is configured in the kernel; force-load
