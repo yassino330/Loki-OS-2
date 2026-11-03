@@ -97,7 +97,7 @@ chroot "$ROOTFS" passwd -l root
 # Passwordless local desktop: LightDM logs the live user in automatically, and
 # administrative actions launched from the desktop do not prompt for a password.
 install -d -m 0750 "$ROOTFS/etc/sudoers.d"
-printf '%s\\n' 'loki ALL=(ALL:ALL) NOPASSWD: ALL' > "$ROOTFS/etc/sudoers.d/lokios-loki"
+printf '%s\n' 'loki ALL=(ALL:ALL) NOPASSWD: ALL' > "$ROOTFS/etc/sudoers.d/lokios-loki"
 chmod 0440 "$ROOTFS/etc/sudoers.d/lokios-loki"
 chroot "$ROOTFS" visudo -cf /etc/sudoers
 
