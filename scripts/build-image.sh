@@ -110,7 +110,7 @@ if grep -Eiq 'QQmlApplicationEngine failed to load component|module .* is not in
 fi
 
 # Create the live account explicitly; do not depend on live-config defaults.
-chroot "$ROOTFS" useradd --create-home --shell /bin/bash --groups audio,video,plugdev,netdev,sudo loki
+chroot "$ROOTFS" useradd --create-home --shell /bin/bash --groups audio,video,input,plugdev,netdev,sudo loki
 chroot "$ROOTFS" passwd -d loki
 chroot "$ROOTFS" passwd -l root
 
