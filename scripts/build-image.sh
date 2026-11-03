@@ -71,7 +71,7 @@ for path in bin sbin lib; do
 done
 chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
   systemd-sysv initramfs-tools live-boot live-config plymouth plymouth-themes lightdm lightdm-gtk-greeter \
-  xserver-xorg-core xserver-xorg-input-libinput xserver-xorg-video-fbdev \
+  xserver-xorg xserver-xorg-input-libinput xserver-xorg-video-fbdev \
   openbox dbus-x11 network-manager sudo locales pcmanfm xterm lxappearance \
   libgl1-mesa-dri \
   firmware-iwlwifi firmware-realtek firmware-atheros firmware-brcm80211 \
@@ -91,8 +91,15 @@ rm -rf "$ROOTFS/usr/src/lokios" "$ROOTFS/tmp/lokios-build"
 
 # Create the live account explicitly; do not depend on live-config defaults.
 chroot "$ROOTFS" useradd --create-home --shell /bin/bash --groups audio,video,plugdev,netdev,sudo loki
-echo 'loki:lokios' | chroot "$ROOTFS" chpasswd
+chroot "$ROOTFS" passwd -d loki
 chroot "$ROOTFS" passwd -l root
+
+# Passwordless local desktop: LightDM logs the live user in automatically, and
+# administrative actions launched from the desktop do not prompt for a password.
+install -d -m 0750 "$ROOTFS/etc/sudoers.d"
+printf '%s\\n' 'loki ALL=(ALL:ALL) NOPASSWD: ALL' > "$ROOTFS/etc/sudoers.d/ lokios-loki" 
+chmod 0440 "$ROOTFS/etc/sudoers.d/ lokios-loki"
+chroot "$ROOTFS" visudo -cf /etc/sudoers
 
 mkdir -p "$ROOTFS/usr/local/bin" "$ROOTFS/usr/share/xsessions" "$ROOTFS/etc/lightdm/lightdm.conf.d"
 cat > "$ROOTFS/usr/local/bin/lokios-session" <<'SESSION'
@@ -130,6 +137,9 @@ nvme
 MODULES
 
 # Use Debian's polished spinner Plymouth theme during kernel/initramfs startup.
+# Make the graphical desktop the real boot target and explicitly enable its display manager.
+chroot "$ROOTFS" systemctl set-default graphical.target
+chroot "$ROOTFS" systemctl enable lightdm
 chroot "$ROOTFS" plymouth-set-default-theme spinner
 mkdir -p "$ROOTFS/etc/plymouth"
 cat > "$ROOTFS/etc/plymouth/plymouthd.conf" <<'PLYMOUTH'
