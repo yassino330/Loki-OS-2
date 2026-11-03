@@ -135,7 +135,7 @@ greeter-hide-users=true
 LIGHTDM
 rm -f "$ROOTFS/etc/lightdm/lightdm.conf.d/50-lokios.conf"
 # Fail the image build if the image would fall back to a username/password prompt.
-chroot "$ROOTFS" lightdm --show-config > "$OUTPUT_DIR/lightdm-effective.conf"
+chroot "$ROOTFS" lightdm --show-config > "$OUTPUT_DIR/lightdm-effective.conf" 2>&1
 grep -Eq 'autologin-user[[:space:]]*=[[:space:]]*loki' "$OUTPUT_DIR/lightdm-effective.conf" || {
   echo "LightDM autologin for the loki account is not active." >&2
   cat "$OUTPUT_DIR/lightdm-effective.conf" >&2
