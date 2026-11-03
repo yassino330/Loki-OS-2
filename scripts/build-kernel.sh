@@ -20,17 +20,7 @@ fi
 
 cd "$WORK_DIR/linux"
 make x86_64_defconfig
-"$ROOT_DIR/scripts/config" --file .config --enable CONFIG_EFI_STUB
-"$ROOT_DIR/scripts/config" --file .config --enable CONFIG_BLK_DEV_INITRD
-"$ROOT_DIR/scripts/config" --file .config --enable CONFIG_DEVTMPFS
-"$ROOT_DIR/scripts/config" --file .config --enable CONFIG_DEVTMPFS_MOUNT
-"$ROOT_DIR/scripts/config" --file .config --enable CONFIG_EXT4_FS
-"$ROOT_DIR/scripts/config" --file .config --enable CONFIG_VFAT_FS
-"$ROOT_DIR/scripts/config" --file .config --enable CONFIG_VIRTIO
-"$ROOT_DIR/scripts/config" --file .config --enable CONFIG_VIRTIO_PCI
-"$ROOT_DIR/scripts/config" --file .config --enable CONFIG_VIRTIO_BLK
-"$ROOT_DIR/scripts/config" --file .config --enable CONFIG_VIRTIO_NET
-"$ROOT_DIR/scripts/config" --file .config --enable CONFIG_DRM_SIMPLEDRM
+scripts/kconfig/merge_config.sh -m .config "$ROOT_DIR/kernel/config.fragment"
 make olddefconfig
 
 make -j"$JOBS" bzImage modules
