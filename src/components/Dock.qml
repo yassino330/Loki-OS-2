@@ -3,6 +3,7 @@ import QtQuick.Controls
 
 Item {
     id: root
+    signal appClicked(string appName)
 
     implicitWidth: row.implicitWidth + 28
     implicitHeight: 76
@@ -41,6 +42,7 @@ Item {
                     }
                     ToolTip.visible: hovered
                     ToolTip.text: modelData.name
+                    onClicked: root.appClicked(modelData.name)
                 }
             }
         }
