@@ -80,7 +80,8 @@ chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-inst
   parted dosfstools grub-efi-amd64 grub2-common efibootmgr \
   qt6-qpa-plugins qml6-module-qtquick qml6-module-qtquick-controls \
   qml6-module-qtquick-window qml6-module-qtquick-templates \
-  cmake ninja-build g++ qt6-base-dev qt6-declarative-dev qt6-declarative-dev-tools
+  cmake ninja-build g++ qt6-base-dev qt6-declarative-dev qt6-declarative-dev-tools \\
+  keyboard-configuration console-setup xkb-data xvfb xauth
 
 echo "Building LokiOS Qt desktop shell inside the target root filesystem..."
 chroot "$ROOTFS" cmake -S /usr/src/lokios -B /tmp/lokios-build -G Ninja -DCMAKE_BUILD_TYPE=Release
@@ -88,6 +89,25 @@ chroot "$ROOTFS" cmake --build /tmp/lokios-build --parallel 2
 install -D -m 0755 "$ROOTFS/tmp/lokios-build/lokios" "$ROOTFS/usr/local/bin/lokios"
 install -D -m 0755 "$ROOT_DIR/scripts/lokios-install" "$ROOTFS/usr/local/sbin/lokios-install"
 rm -rf "$ROOTFS/usr/src/lokios" "$ROOTFS/tmp/lokios-build"
+
+# A successful compile is not enough: launch the actual desktop with a virtual
+# X server and fail the image build if its QML engine or platform plugin fails.
+echo "Smoke-testing the LokiOS desktop under Xvfb..."
+set +e
+chroot "$ROOTFS" xvfb-run -a timeout --signal=TERM --kill-after=2s 12s \
+  /usr/local/bin/lokios > "$OUTPUT_DIR/lokios-ui-smoke.log" 2>&1
+UI_STATUS=$?
+set -e
+if [[ $UI_STATUS -ne 124 && $UI_STATUS -ne 137 ]]; then
+  echo "LokiOS desktop did not remain running during the UI smoke test (exit $UI_STATUS)." >&2
+  cat "$OUTPUT_DIR/lokios-ui-smoke.log" >&2
+  exit 1
+fi
+if grep -Eiq 'QQmlApplicationEngine failed to load component|module .* is not installed|Type .* unavailable|Could not load the Qt platform plugin|Cannot assign to non-existent property' "$OUTPUT_DIR/lokios-ui-smoke.log"; then
+  echo "LokiOS desktop reported a QML or Qt runtime error." >&2
+  cat "$OUTPUT_DIR/lokios-ui-smoke.log" >&2
+  exit 1
+fi
 
 # Create the live account explicitly; do not depend on live-config defaults.
 chroot "$ROOTFS" useradd --create-home --shell /bin/bash --groups audio,video,plugdev,netdev,sudo loki
@@ -110,6 +130,23 @@ openbox-session &
 exec /usr/local/bin/lokios
 SESSION
 chmod 0755 "$ROOTFS/usr/local/bin/lokios-session"
+
+# Make Xorg's keyboard path explicit and install a predictable base keymap.
+mkdir -p "$ROOTFS/etc/X11/xorg.conf.d"
+cat > "$ROOTFS/etc/X11/xorg.conf.d/40-lokios-input.conf" <<'XORG'
+Section "InputClass"
+    Identifier "LokiOS keyboard"
+    MatchIsKeyboard "on"
+    Driver "libinput"
+    Option "XkbLayout" "us"
+EndSection
+
+Section "InputClass"
+    Identifier "LokiOS pointer"
+    MatchIsPointer "on"
+    Driver "libinput"
+EndSection
+XORG
 
 cat > "$ROOTFS/usr/share/xsessions/lokios.desktop" <<'DESKTOP'
 [Desktop Entry]
@@ -158,6 +195,7 @@ MODULES
 # Make the graphical desktop the real boot target and explicitly enable its display manager.
 chroot "$ROOTFS" systemctl set-default graphical.target
 chroot "$ROOTFS" systemctl enable lightdm
+chroot "$ROOTFS" systemctl is-enabled lightdm >/dev/null
 chroot "$ROOTFS" plymouth-set-default-theme spinner
 mkdir -p "$ROOTFS/etc/plymouth"
 cat > "$ROOTFS/etc/plymouth/plymouthd.conf" <<'PLYMOUTH'
@@ -179,7 +217,7 @@ DPKG
 
 # Retain Qt runtime modules; remove only build dependencies.
 chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get purge -y \
-  cmake ninja-build g++ qt6-base-dev qt6-declarative-dev qt6-declarative-dev-tools
+  cmake ninja-build g++ qt6-base-dev qt6-declarative-dev qt6-declarative-dev-tools xvfb xauth
 chroot "$ROOTFS" apt-get autoremove -y
 chroot "$ROOTFS" apt-get clean
 rm -rf "$ROOTFS/var/lib/apt/lists/"*
