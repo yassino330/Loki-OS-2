@@ -83,7 +83,7 @@ menuentry 'LokiOS' --class lokios {
 }
 GRUB
 chmod 0755 "$TARGET/etc/grub.d/09_lokios"
-chroot "$TARGET" grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=LokiOS --recheck
+chroot "$TARGET" grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=LokiOS --removable --no-nvram --recheck
 chroot "$TARGET" update-grub
 sed -i '/autologin-user=/d;/autologin-user-timeout=/d' "$TARGET/etc/lightdm/lightdm.conf.d/50-lokios.conf"
 say "Set a new password for the installed 'loki' account."
