@@ -8,6 +8,8 @@ on:
       - "scripts/build-kernel.sh"
       - "scripts/build-image.sh"
       - "src/**"
+      - "os/**"
+      - "docs/**"
       - "CMakeLists.txt"
       - ".github/workflows/build-kernel.yml"
 
@@ -26,6 +28,12 @@ jobs:
     steps:
       - name: Check out LokiOS
         uses: actions/checkout@v4
+
+      - name: Compile LokiOS PID 1 bootstrap
+        run: |
+          make -C os/init
+          file os/init/lokios-init
+          test -x os/init/lokios-init
 
       - name: Install image build dependencies
         run: |
