@@ -1,0 +1,66 @@
+name: Bug report
+description: Report a problem in a LokiOS beta build
+title: "[Bug]: "
+labels: ["bug", "beta"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: LokiOS version / beta tag
+      placeholder: v0.1.0-beta.1
+    validations:
+      required: true
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Test environment
+      options:
+        - QEMU
+        - VirtualBox
+        - VMware
+        - Physical PC
+    validations:
+      required: true
+  - type: input
+    id: hardware
+    attributes:
+      label: Hardware / VM details
+      description: CPU, RAM, graphics adapter, storage controller
+    validations:
+      required: true
+  - type: dropdown
+    id: firmware
+    attributes:
+      label: Firmware mode
+      options:
+        - UEFI
+        - Legacy BIOS
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: "1. Boot the ISO..."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / screenshots
+      description: Remove passwords, access tokens, serial numbers, and private data.
+    validations:
+      required: false
