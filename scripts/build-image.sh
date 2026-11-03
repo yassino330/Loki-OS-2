@@ -119,13 +119,31 @@ Exec=/usr/local/bin/lokios-session
 Type=Application
 DESKTOP
 
-cat > "$ROOTFS/etc/lightdm/lightdm.conf.d/50-lokios.conf" <<'LIGHTDM'
+# Put the seat policy in LightDM's primary config so it wins over any
+# distro drop-in that might otherwise leave the Debian greeter on screen.
+cat > "$ROOTFS/etc/lightdm/lightdm.conf" <<'LIGHTDM'
+[LightDM]
+start-default-seat=true
+
 [Seat:*]
 autologin-user=loki
 autologin-user-timeout=0
+autologin-session=lokios
 user-session=lokios
-greeter-session=lightdm-gtk-greeter
+allow-guest=false
+greeter-hide-users=true
 LIGHTDM
+rm -f "$ROOTFS/etc/lightdm/lightdm.conf.d/50-lokios.conf"
+# Fail the image build if the image would fall back to a username/password prompt.
+chroot "$ROOTFS" lightdm --show-config > "$OUTPUT_DIR/lightdm-effective.conf"
+grep -Eq 'autologin-user[[:space:]]*=[[:space:]]*loki' "$OUTPUT_DIR/lightdm-effective.conf" || {
+  echo "LightDM autologin for the loki account is not active." >&2
+  cat "$OUTPUT_DIR/lightdm-effective.conf" >&2
+  exit 1
+}
+test -x "$ROOTFS/usr/local/bin/lokios-session"
+test -f "$ROOTFS/usr/share/xsessions/lokios.desktop"
+getent --root "$ROOTFS" passwd loki >/dev/null
 
 cat > "$ROOTFS/etc/initramfs-tools/modules" <<'MODULES'
 # Built-in live filesystem support is configured in the kernel; force-load
