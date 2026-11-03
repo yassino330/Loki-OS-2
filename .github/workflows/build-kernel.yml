@@ -34,6 +34,14 @@ jobs:
             grub-common grub-efi-amd64-bin grub-pc-bin libelf-dev libssl-dev make mtools perl python3 \
             squashfs-tools tar xorriso xz-utils
 
+      # Reuse the built kernel and modules; rebuild only when the kernel config or build recipe changes.
+      - name: Restore prebuilt Linux kernel
+        id: kernel-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: out/kernel
+          key: lokios-kernel-v1-${{ runner.os }}-${{ hashFiles('kernel/config.fragment', 'scripts/build-kernel.sh') }}
+
       # Restore the most recent compiler cache, then save a fresh snapshot every run.
       - name: Restore kernel compiler cache
         uses: actions/cache/restore@v4
@@ -46,6 +54,7 @@ jobs:
             lokios-ccache-${{ runner.os }}-
 
       - name: Build LokiOS kernel
+        if: steps.kernel-cache.outputs.cache-hit != 'true'
         env:
           JOBS: "2"
           CCACHE_DIR: ${{ runner.temp }}/ccache
@@ -56,6 +65,13 @@ jobs:
           ccache --zero-stats
           bash scripts/build-kernel.sh
           ccache --show-stats
+
+      - name: Save prebuilt Linux kernel
+        if: steps.kernel-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: out/kernel
+          key: lokios-kernel-v1-${{ runner.os }}-${{ hashFiles('kernel/config.fragment', 'scripts/build-kernel.sh') }}
 
       - name: Save updated kernel compiler cache
         if: always()
