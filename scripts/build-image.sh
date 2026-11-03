@@ -76,7 +76,7 @@ chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-inst
   libgl1-mesa-dri \
   firmware-iwlwifi firmware-realtek firmware-atheros firmware-brcm80211 \
   firmware-mediatek intel-microcode amd64-microcode \
-  fonts-dejavu-core x11-xserver-utils \
+  fonts-dejavu-core x11-xserver-utils chromium \
   parted dosfstools grub-efi-amd64 grub2-common efibootmgr \
   qt6-qpa-plugins qml6-module-qtquick qml6-module-qtquick-controls \
   qml6-module-qtquick-window qml6-module-qtquick-templates \
