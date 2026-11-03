@@ -26,8 +26,18 @@ make olddefconfig
 KERNEL_RELEASE="$(make -s kernelrelease)"
 echo "$KERNEL_RELEASE" > "$OUTPUT_DIR/kernel-release.txt"
 
-make -j"$JOBS" bzImage modules
-make -j"$JOBS" modules_install INSTALL_MOD_PATH="$OUTPUT_DIR/modules-root"
+# Use ccache when available; plain GCC remains supported for local builds.
+if command -v ccache >/dev/null 2>&1; then
+  export CCACHE_DIR="${CCACHE_DIR:-$HOME/.cache/ccache}"
+  mkdir -p "$CCACHE_DIR"
+  ccache --max-size=2G
+  COMPILER="ccache gcc"
+else
+  COMPILER="gcc"
+fi
+
+make -j"$JOBS" CC="$COMPILER" bzImage modules
+make -j"$JOBS" CC="$COMPILER" modules_install INSTALL_MOD_PATH="$OUTPUT_DIR/modules-root"
 
 install -D arch/x86/boot/bzImage "$OUTPUT_DIR/bzImage"
 install -D System.map "$OUTPUT_DIR/System.map"

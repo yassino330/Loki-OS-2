@@ -9,12 +9,8 @@ Window {
     minimumWidth: 900
     minimumHeight: 600
     visible: true
-    visibility: Window.FullScreen
     title: "LokiOS"
     color: "#101522"
-
-    property bool launcherOpen: false
-    property bool settingsOpen: false
 
     Rectangle {
         anchors.fill: parent
@@ -26,9 +22,9 @@ Window {
     }
 
     Rectangle {
-        width: 560
-        height: 560
-        radius: 280
+        width: 520
+        height: 520
+        radius: 260
         x: parent.width * 0.57 - width / 2
         y: parent.height * 0.38 - height / 2
         color: "#263f70"
@@ -36,6 +32,7 @@ Window {
     }
 
     GlassPanel {
+        id: topBar
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
@@ -82,119 +79,11 @@ Window {
             color: "#aebbd0"
             font.pixelSize: 17
         }
-
-        Label {
-            anchors.horizontalCenter: parent.horizontalCenter
-            text: "Welcome to your desktop"
-            color: "#8291aa"
-            font.pixelSize: 12
-        }
     }
 
     Dock {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 24
-
-        onAppClicked: function(appName) {
-            if (appName === "Home") {
-                root.launcherOpen = false
-                root.settingsOpen = false
-            } else if (appName === "Apps") {
-                root.launcherOpen = !root.launcherOpen
-                root.settingsOpen = false
-            } else if (appName === "Files") {
-                SystemActions.launch("pcmanfm")
-            } else if (appName === "Settings") {
-                root.settingsOpen = !root.settingsOpen
-                root.launcherOpen = false
-            }
-        }
-    }
-
-    GlassPanel {
-        visible: root.launcherOpen
-        width: 360
-        height: 300
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: 112
-        cornerRadius: 26
-        glassOpacity: 0.94
-
-        Column {
-            anchors.fill: parent
-            anchors.margins: 22
-            spacing: 14
-
-            Label {
-                text: "Applications"
-                color: "#f5f7fc"
-                font.pixelSize: 22
-                font.weight: Font.DemiBold
-            }
-
-            Button {
-                text: "Terminal"
-                onClicked: {
-                    SystemActions.launch("xterm")
-                    root.launcherOpen = false
-                }
-            }
-
-            Button {
-                text: "File Manager"
-                onClicked: {
-                    SystemActions.launch("pcmanfm")
-                    root.launcherOpen = false
-                }
-            }
-
-            Button {
-                text: "System Settings"
-                onClicked: {
-                    root.settingsOpen = true
-                    root.launcherOpen = false
-                }
-            }
-        }
-    }
-
-    GlassPanel {
-        visible: root.settingsOpen
-        width: 390
-        height: 250
-        anchors.centerIn: parent
-        cornerRadius: 26
-        glassOpacity: 0.96
-
-        Column {
-            anchors.fill: parent
-            anchors.margins: 22
-            spacing: 12
-
-            Label {
-                text: "LokiOS Settings"
-                color: "#f5f7fc"
-                font.pixelSize: 22
-                font.weight: Font.DemiBold
-            }
-
-            Label {
-                text: "Desktop preview"
-                color: "#d3dbea"
-            }
-
-            Label {
-                text: "Display and hardware controls are coming next."
-                color: "#aebbd0"
-                wrapMode: Text.WordWrap
-            }
-
-            Button {
-                text: "Close"
-                onClicked: root.settingsOpen = false
-            }
-        }
     }
 }

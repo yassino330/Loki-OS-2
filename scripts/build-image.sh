@@ -58,7 +58,7 @@ trap cleanup EXIT
 
 chroot "$ROOTFS" apt-get update
 chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-  systemd-sysv live-boot live-config lightdm lightdm-gtk-greeter \
+  systemd-sysv initramfs-tools live-boot live-config lightdm lightdm-gtk-greeter \
   xserver-xorg-core xserver-xorg-input-libinput xserver-xorg-video-fbdev \
   openbox dbus-x11 network-manager sudo locales pcmanfm xterm \
   fonts-dejavu-core x11-xserver-utils \
@@ -76,7 +76,6 @@ mkdir -p "$ROOTFS/usr/local/bin" "$ROOTFS/usr/share/xsessions" "$ROOTFS/etc/ligh
 cat > "$ROOTFS/usr/local/bin/lokios-session" <<'SESSION'
 #!/bin/sh
 openbox-session &
-sleep 1
 exec env QT_QPA_PLATFORM=xcb /usr/local/bin/lokios
 SESSION
 chmod 0755 "$ROOTFS/usr/local/bin/lokios-session"
@@ -102,20 +101,20 @@ squashfs
 overlay
 MODULES
 
-# Remove compilers and development headers while retaining Qt runtime/QML modules.
+# Remove build-only tools while keeping the Qt runtime and QML modules.
 chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get purge -y \
   cmake ninja-build g++ qt6-base-dev qt6-declarative-dev qt6-declarative-dev-tools
 chroot "$ROOTFS" apt-get autoremove -y
 chroot "$ROOTFS" apt-get clean
 rm -rf "$ROOTFS/var/lib/apt/lists/"*
 
-# Create the initramfs with the matching custom kernel modules and live-boot hooks.
+# Build the initramfs with the matching kernel modules and live-boot hooks.
 chroot "$ROOTFS" update-initramfs -c -k "$KERNEL_RELEASE"
 install -m 0644 "$KERNEL_DIR/bzImage" "$ISO_ROOT/live/vmlinuz"
 install -m 0644 "$ROOTFS/boot/initrd.img-$KERNEL_RELEASE" "$ISO_ROOT/live/initrd.img"
 
-echo "Compressing the Debian userspace..."
-mksquashfs "$ROOTFS" "$ISO_ROOT/live/filesystem.squashfs" -comp xz -b 1M -noappend
+echo "Compressing the Debian userspace with fast Zstandard compression..."
+mksquashfs "$ROOTFS" "$ISO_ROOT/live/filesystem.squashfs" -comp zstd -Xcompression-level 15 -b 1M -noappend
 
 cat > "$ISO_ROOT/boot/grub/grub.cfg" <<'GRUB'
 set timeout=5

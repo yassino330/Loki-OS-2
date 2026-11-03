@@ -11,6 +11,11 @@ on:
       - "CMakeLists.txt"
       - ".github/workflows/build-kernel.yml"
 
+# New commits replace obsolete builds instead of filling the runner queue.
+concurrency:
+  group: lokios-image-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -25,15 +30,35 @@ jobs:
       - name: Install image build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y bc bison build-essential cpio debootstrap flex git             grub-common grub-pc-bin libelf-dev libssl-dev make perl python3             squashfs-tools tar xorriso xz-utils
+          sudo apt-get install -y bc bison build-essential ccache cpio debootstrap flex git \
+            grub-common grub-pc-bin libelf-dev libssl-dev make perl python3 \
+            squashfs-tools tar xorriso xz-utils
+
+      # Reuse compiled kernel objects when the kernel configuration is unchanged.
+      - name: Restore kernel compiler cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ccache
+          key: lokios-ccache-${{ runner.os }}-${{ hashFiles('kernel/config.fragment') }}
+          restore-keys: |
+            lokios-ccache-${{ runner.os }}-
 
       - name: Build LokiOS kernel
         env:
           JOBS: "2"
-        run: bash scripts/build-kernel.sh
+          CCACHE_DIR: ~/.cache/ccache
+        run: |
+          ccache --max-size=2G
+          bash scripts/build-kernel.sh
+          ccache --show-stats
 
       - name: Build graphical live ISO
         run: sudo -E bash scripts/build-image.sh
+
+      - name: Verify ISO output
+        run: |
+          test -s out/LokiOS-graphical-x86_64.iso
+          ls -lh out/LokiOS-graphical-x86_64.iso
 
       - name: Upload bootable LokiOS ISO
         uses: actions/upload-artifact@v4
