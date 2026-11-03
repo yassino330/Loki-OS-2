@@ -1,0 +1,39 @@
+name: Build LokiOS kernel
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "kernel/**"
+      - "scripts/build-kernel.sh"
+      - ".github/workflows/build-kernel.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Check out LokiOS
+        uses: actions/checkout@v4
+
+      - name: Install kernel build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc bison build-essential flex git libelf-dev libssl-dev \
+            make perl python3 tar xz-utils
+
+      - name: Build minimal kernel
+        env:
+          JOBS: "2"
+        run: bash scripts/build-kernel.sh
+
+      - name: Upload kernel artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: lokios-kernel-x86_64
+          path: out/kernel/
+          if-no-files-found: error
+          retention-days: 7
