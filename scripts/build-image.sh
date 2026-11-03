@@ -116,9 +116,12 @@ greeter-session=lightdm-gtk-greeter
 LIGHTDM
 
 cat > "$ROOTFS/etc/initramfs-tools/modules" <<'MODULES'
-squashfs
-overlay
-loop
+# Built-in live filesystem support is configured in the kernel; force-load
+# storage drivers so the live medium is discoverable on different hardware.
+usb-storage
+sd_mod
+ahci
+nvme
 MODULES
 
 # Retain Qt runtime modules; remove only build dependencies.
