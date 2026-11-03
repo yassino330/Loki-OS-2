@@ -43,13 +43,22 @@ jobs:
           test -x os/init/lokios-init
           test -x os/init/lokios-supervisor
 
-      # Reuse the built kernel and modules; rebuild only when the kernel config or build recipe changes.
+      - name: Resolve exact upstream kernel revision
+        id: kernel-source
+        run: |
+          KERNEL_COMMIT="$(git ls-remote https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git refs/heads/linux-6.12.y | cut -f1)"
+          test -n "$KERNEL_COMMIT"
+          echo "commit=$KERNEL_COMMIT" >> "$GITHUB_OUTPUT"
+
+      # Cache identity includes the exact upstream kernel commit, not just the moving branch name.
+      # Reuse the built kernel only when source, config, and build recipe all match.
+
       - name: Restore prebuilt Linux kernel
         id: kernel-cache
         uses: actions/cache/restore@v4
         with:
           path: out/kernel
-          key: lokios-kernel-v1-${{ runner.os }}-${{ hashFiles('kernel/config.fragment', 'scripts/build-kernel.sh') }}
+          key: lokios-kernel-v2-${{ runner.os }}-${{ steps.kernel-source.outputs.commit }}-${{ hashFiles('kernel/config.fragment', 'scripts/build-kernel.sh') }}
 
       # Restore the most recent compiler cache, then save a fresh snapshot every run.
       - name: Restore kernel compiler cache
@@ -69,6 +78,7 @@ jobs:
           CCACHE_DIR: ${{ runner.temp }}/ccache
           CCACHE_COMPILERCHECK: content
           CCACHE_COMPRESS: "true"
+          KERNEL_COMMIT: ${{ steps.kernel-source.outputs.commit }}
         run: |
           ccache --max-size=5G
           ccache --zero-stats
