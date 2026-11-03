@@ -1,14 +1,12 @@
 # LokiOS engineering roadmap
 
-- [ ] Replace distro rootfs/debootstrap with a LokiOS-built root filesystem.
-- [ ] Build a minimal LokiOS initramfs and PID 1.
-- [ ] Add supervised service lifecycle, logging, mount setup and shutdown.
-- [ ] Add hardware discovery and networking integration.
-- [ ] Build a LokiOS graphical installer with destructive-disk safeguards.
-- [ ] Define a reproducible installed-system image format and rollback/recovery.
-- [ ] Implement a LokiOS graphical session and core desktop applications.
-- [ ] Bundle Chromium as an application.
-- [ ] Add automated QEMU boot/install/first-boot tests.
-- [ ] Remove legacy Debian prototype path only after replacement passes all acceptance gates.
+- [ ] Polish the LokiOS desktop shell, app launcher, dock, quick settings, and settings.
+- [ ] Build a guided full-screen installer with language, keyboard, network, disk, progress, and restart stages.
+- [ ] Harden partitioning and bootloader setup with explicit destructive-operation safeguards.
+- [ ] Test the live ISO in QEMU and fix boot/session issues.
+- [ ] Test Chromium launch and core desktop workflows.
+- [ ] Test installation against disposable virtual disks and verify first boot.
+- [ ] Improve boot splash, login/session experience, and hardware compatibility.
+- [ ] Gradually replace prototype components when custom LokiOS alternatives are ready and beneficial.
 
-Do not mark a stage complete until its automated test passes.
+A custom init is not a project requirement. Using systemd is acceptable. Do not call the OS release-ready until boot, desktop, installation, and first-boot acceptance tests pass.
