@@ -9,7 +9,8 @@ Window {
     minimumWidth: 960
     minimumHeight: 640
     visible: true
-    title: "LokiOS"
+    visibility: root.installerOpen ? Window.FullScreen : Window.Maximized
+    title: "LokiOS Beta Preview"
     color: "#080d18"
     property string activePanel: "home"
     property bool welcomeVisible: true
@@ -53,7 +54,7 @@ Window {
         Row {
             anchors.right: parent.right; anchors.rightMargin: 18
             anchors.verticalCenter: parent.verticalCenter; spacing: 15
-            Label { text: "◉  Connected"; color: "#9eb6c9"; font.pixelSize: 12 }
+            Label { text: "LokiOS Beta Preview"; color: "#9eb6c9"; font.pixelSize: 12 }
             ToolButton {
                 text: "⌃"; font.pixelSize: 18
                 palette.buttonText: "#eaf1ff"
@@ -167,7 +168,7 @@ Window {
                     }
                 }
             }
-            Label { text: "LokiOS Preview  •  Linux kernel 6.12"; color: "#71839d"; font.pixelSize: 11 }
+            Label { text: "LokiOS Beta Preview  •  Linux kernel 6.12"; color: "#71839d"; font.pixelSize: 11 }
         }
     }
 
@@ -221,7 +222,7 @@ Window {
         visible: root.installerOpen
         color: "#cc050a13"
         Rectangle {
-            width: 600; height: 650; radius: 30
+            width: Math.min(parent.width - 64, 920); height: Math.min(parent.height - 64, 760); radius: 30
             anchors.centerIn: parent
             color: "#f018263b"
             border.color: "#55ffffff"
