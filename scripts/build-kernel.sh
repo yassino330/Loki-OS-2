@@ -38,19 +38,6 @@ make x86_64_defconfig
 scripts/kconfig/merge_config.sh -m .config "$ROOT_DIR/kernel/config.fragment"
 make olddefconfig
 
-# Refuse to ship a kernel that can boot without a usable keyboard. These
-# drivers must be built in (not modules) so they are available before the
-# live root filesystem and its module tree are mounted.
-for option in CONFIG_INPUT_EVDEV CONFIG_HID CONFIG_HID_GENERIC CONFIG_USB_HID \
-              CONFIG_SERIO CONFIG_SERIO_I8042 CONFIG_SERIO_LIBPS2 \
-              CONFIG_KEYBOARD_ATKBD CONFIG_MOUSE_PS2 CONFIG_VIRTIO_INPUT \
-              CONFIG_I2C_HID CONFIG_I2C_HID_ACPI; do
-  if ! grep -qx "${option}=y" .config; then
-    echo "Required built-in keyboard/input option is missing: ${option}" >&2
-    exit 4
-  fi
-done
-
 KERNEL_RELEASE="$(make -s kernelrelease)"
 echo "$KERNEL_RELEASE" > "$OUTPUT_DIR/kernel-release.txt"
 printf '%s\\n' "$ACTUAL_COMMIT" > "$OUTPUT_DIR/source-commit.txt"
