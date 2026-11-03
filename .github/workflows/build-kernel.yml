@@ -11,6 +11,7 @@ on:
       - "kernel/**"
       - "scripts/build-kernel.sh"
       - "scripts/build-image.sh"
+      - "scripts/lokios-install"
       - "src/**"
       - "os/**"
       - "docs/**"
