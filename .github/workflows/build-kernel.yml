@@ -3,6 +3,8 @@ name: Build LokiOS image
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
     tags:
       - "v*-beta*"
     paths:
@@ -106,7 +108,7 @@ jobs:
           test "$ISO_BYTES" -lt 1073741824 || { echo "ISO exceeds the 1 GiB target."; exit 1; }
           sha256sum out/LokiOS-graphical-x86_64.iso > out/LokiOS-graphical-x86_64.iso.sha256
 
-      - name: Upload bootable LokiOS ISO
+      - name: Upload LokiOS ISO artifact
         uses: actions/upload-artifact@v4
         with:
           name: lokios-graphical-iso-x86_64
