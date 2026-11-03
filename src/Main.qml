@@ -132,6 +132,7 @@ Window {
                 columns: 2; spacing: 12
                 Repeater {
                     model: [
+                        {name:"Browser", detail:"Browse the web", glyph:"◎", cmd:"browser"},
                         {name:"Terminal", detail:"Command line", glyph:"›_", cmd:"terminal"},
                         {name:"Files", detail:"Browse your folders", glyph:"▰", cmd:"files"},
                         {name:"Appearance", detail:"Customize your desktop", glyph:"◐", cmd:"appearance"},
@@ -156,7 +157,8 @@ Window {
                         MouseArea {
                             id: mouse; anchors.fill: parent; hoverEnabled: true
                             onClicked: {
-                                if (modelData.cmd === "terminal") SystemActions.launch("xterm")
+                                if (modelData.cmd === "browser") SystemActions.launch("chromium")
+                                else if (modelData.cmd === "terminal") SystemActions.launch("xterm")
                                 else if (modelData.cmd === "files") SystemActions.launch("pcmanfm")
                                 else if (modelData.cmd === "appearance") SystemActions.launch("lxappearance")
                                 else if (modelData.cmd === "installer") { root.installerOpen = true; root.activePanel = "home" }
