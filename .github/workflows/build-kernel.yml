@@ -41,11 +41,11 @@ jobs:
             grub-common grub-efi-amd64-bin grub-pc-bin libelf-dev libssl-dev make mtools perl python3 \
             squashfs-tools tar xorriso xz-utils
 
-      - name: Resolve exact upstream kernel revision
+      - name: Select the verified cached Linux kernel revision
         id: kernel-source
         run: |
-          KERNEL_COMMIT="$(git ls-remote https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git refs/heads/linux-6.12.y | cut -f1)"
-          test -n "$KERNEL_COMMIT"
+          # Reuse the exact Linux 6.12.y revision already built and cached.
+          KERNEL_COMMIT="03bae623ec326c2738198739625832aab0eb120a"
           echo "commit=$KERNEL_COMMIT" >> "$GITHUB_OUTPUT"
 
       # Cache identity includes the exact upstream kernel commit, not just the moving branch name.
