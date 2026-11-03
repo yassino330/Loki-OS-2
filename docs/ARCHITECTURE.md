@@ -1,38 +1,37 @@
 # LokiOS architecture
 
-## Non-negotiable product boundary
+## Product direction
 
-The Linux kernel is the only upstream operating-system component. LokiOS owns everything in userspace: PID 1, initramfs, service supervision, device management policy, login/session, desktop, shell, settings, installer, package/update system, and branding.
+LokiOS uses the upstream Linux kernel. It does **not** require a custom init or PID 1; a mature service manager such as systemd is acceptable. Custom engineering is focused on the LokiOS desktop experience, installer, system integration, settings, utilities, and branding.
 
-Third-party application software (for example Chromium) may be bundled as applications, but it must not become the operating-system foundation or dictate the user experience.
+Third-party components may be used where they are practical foundations or applications. The goal is a coherent LokiOS product, not rewriting every mature system component without a user benefit.
 
-## Migration strategy
+## Current prototype
 
-The existing Debian-based ISO is retained only as a clearly labelled prototype and recovery reference. Do not silently relabel it as the target OS.
+The current image uses Debian Trixie as its root filesystem, systemd, live-boot, GRUB, Xorg, LightDM, Openbox, and a Qt Quick LokiOS desktop shell. Chromium is installed in the image. The installer is a graphical front end to a disk installation script.
 
-The replacement is built in layers:
+This prototype is not yet a polished release. In particular, the installer must be validated against disposable virtual disks, and the installed system must be tested independently of the live ISO.
 
-1. **Boot contract:** upstream kernel + LokiOS-built initramfs, with LokiOS PID 1.
-2. **Base userspace:** LokiOS-owned init, service supervisor, device setup, mount handling, logging, networking integration, and recovery shell.
-3. **Installer environment:** bootable full-screen LokiOS setup application; language, keyboard, network, storage, install progress, reboot.
-4. **Installed system:** atomic deployment of the LokiOS system image, bootloader setup, recovery entry, first-run wizard.
-5. **Desktop:** LokiOS session compositor/shell, panel, launcher, settings, notifications, file manager and terminal.
-6. **Applications:** Chromium and curated modern apps installed as applications, isolated from core OS where practical.
+## Priorities
+
+1. Improve the desktop shell and make launcher/settings controls functional.
+2. Replace the installer front end with a guided, full-screen setup wizard.
+3. Harden partitioning, bootloader installation, failure recovery, and progress reporting.
+4. Improve boot splash, login/session presentation, and hardware support.
+5. Test boot, live session, installation, first boot, networking, and Chromium in QEMU before recommending real hardware.
 
 ## Kernel cache
 
-CI may reuse a kernel build only when the kernel source revision, configuration, toolchain identity, and build recipe match. A cache miss must build the kernel. Never substitute an arbitrary stale kernel cache.
+CI may reuse a kernel build only when the exact upstream source revision, configuration, and build recipe match. A cache miss must build that exact source revision.
 
 ## Acceptance gates
 
-- Build the initramfs reproducibly.
-- Boot under QEMU with serial console and graphical display.
-- Verify PID 1, mounts, networking, shutdown/reboot and recovery.
-- Run installer against a disposable virtual disk.
-- Verify installed system boots independently of installation media.
-- Verify graphical session and preinstalled Chromium.
-- Publish ISO only after all gates pass.
+- CI produces a non-empty ISO and uploads it as an artifact.
+- ISO boots in QEMU to the live desktop.
+- Chromium launches successfully.
+- Installer is tested only against disposable virtual disks until destructive operations are validated.
+- Installed system boots independently of installation media.
 
 ## Current status
 
-The current image pipeline is a Debian-based prototype. The target architecture above is not yet implemented. This document defines the engineering boundary; it is not a claim that the replacement OS already exists.
+The repository currently produces a Debian-based development ISO. The successful CI artifact proves image generation, not complete hardware compatibility or production readiness.
