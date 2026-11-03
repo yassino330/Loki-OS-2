@@ -3,12 +3,12 @@ import QtQuick.Controls
 
 Item {
     id: root
+    signal appClicked(string appName)
 
     implicitWidth: row.implicitWidth + 28
     implicitHeight: 76
 
     GlassPanel {
-        id: dock
         anchors.centerIn: parent
         width: row.implicitWidth + 28
         height: 68
@@ -35,6 +35,7 @@ Item {
                     text: modelData.label
                     font.pixelSize: 25
                     palette.buttonText: "#f4f6fb"
+                    onClicked: root.appClicked(modelData.name)
                     background: Rectangle {
                         radius: 16
                         color: parent.hovered ? "#28ffffff" : "transparent"

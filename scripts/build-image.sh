@@ -60,7 +60,7 @@ chroot "$ROOTFS" apt-get update
 chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
   systemd-sysv live-boot live-config lightdm lightdm-gtk-greeter \
   xserver-xorg-core xserver-xorg-input-libinput xserver-xorg-video-fbdev \
-  openbox dbus-x11 dbus-x11 network-manager sudo locales \
+  openbox dbus-x11 network-manager sudo locales pcmanfm xterm \
   fonts-dejavu-core x11-xserver-utils \
   qt6-qpa-plugins qml6-module-qtquick qml6-module-qtquick-controls \
   qml6-module-qtquick-window qml6-module-qtquick-templates \
