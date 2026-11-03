@@ -1,63 +1,62 @@
 # LokiOS
 
-A Linux desktop project with a minimalist Liquid Glass-inspired interface.
+A lightweight Linux desktop project with a minimalist Liquid Glass-inspired interface.
 
-## Current status
+## Current build target
 
-The repository contains an early Qt Quick desktop-shell scaffold and a GitHub Actions pipeline intended to build a minimal x86_64 bootable ISO. The first ISO is a text-mode BusyBox recovery environment, not the finished graphical desktop. It is a bootable foundation for bringing up the kernel and userspace.
+The GitHub Actions pipeline builds a Debian 13 (Trixie) live ISO using a custom-configured upstream Linux 6.12.y kernel and the LokiOS Qt Quick shell.
 
-## Technology
-
-- Upstream Linux 6.12.y kernel with a LokiOS configuration fragment
-- Minimal static BusyBox userspace and init script
-- GRUB 2 bootloader
-- Qt 6.5+ and Qt Quick / QML desktop shell (prototype; not yet integrated into the boot image)
+The graphical image is a development preview, not a production-ready distribution. Hardware coverage, graphics acceleration, installer, power management, and broad application support still need testing and work.
 
 ## Build without using your PC storage
 
-GitHub Actions compiles the kernel and assembles the bootable ISO on a GitHub-hosted runner.
+GitHub Actions builds the kernel and assembles the ISO on a hosted runner.
 
 1. Open the [Actions page](https://github.com/yassino330/Loki-OS-2/actions).
-2. Select **Build LokiOS image**.
-3. Open the latest run.
-4. When it succeeds, download the `lokios-bootable-iso-x86_64` artifact from the run's Artifacts section.
+2. Select **Build LokiOS image** and open the latest run.
+3. Wait for all build steps to finish successfully.
+4. Download **lokios-graphical-iso-x86_64** from the run's Artifacts section.
 
-The ISO is named `LokiOS-minimal-x86_64.iso`. The artifact is retained for 14 days.
+The resulting ISO is named `LokiOS-graphical-x86_64.iso`. GitHub retains it for 14 days.
 
-The kernel build starts from the upstream Linux `linux-6.12.y` stable branch and applies `kernel/config.fragment` on top of x86_64_defconfig. This is a custom-configured upstream Linux kernel, not a kernel written from scratch.
+## What the image contains
 
-## Build locally on Linux
+- Custom-configured Linux 6.12.y kernel and matching modules
+- Debian Trixie minimal live userspace with live-boot
+- GRUB boot menu and SquashFS compressed root filesystem
+- Xorg, LightDM, Openbox and NetworkManager
+- Qt 6 Quick / QML runtime
+- LokiOS shell, launched as the live desktop session
 
-Install the kernel build dependencies, BusyBox static, cpio, GRUB utilities and xorriso, then run:
+The kernel is based on upstream Linux; LokiOS does not claim to have a kernel written from scratch.
+
+## Local development
+
+On Debian or Ubuntu, install Qt 6 Quick development packages, CMake and Ninja, then run:
+
+```bash
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+./build/lokios
+```
+
+To assemble the full ISO locally, install the host packages used in `.github/workflows/build-kernel.yml` and run:
 
 ```bash
 bash scripts/build-kernel.sh
-bash scripts/build-image.sh
-```
-
-The output ISO is written to `out/LokiOS-minimal-x86_64.iso`.
-
-## Desktop shell prototype
-
-The Qt Quick shell source is under `src/`. It is not yet included in the minimal ISO. On a Debian-based development machine with Qt 6 Quick development files and the Qt Quick Controls QML module installed, build it with:
-
-```bash
-cmake -S . -B build
-cmake --build build
-./build/lokios
+sudo bash scripts/build-image.sh
 ```
 
 ## Roadmap
 
 - [x] Initial Qt Quick shell scaffold
-- [x] Minimal x86_64 kernel configuration
-- [x] GitHub Actions kernel and ISO build pipeline
-- [x] Minimal BusyBox root filesystem and GRUB boot image assembly
-- [ ] Confirm successful cloud build and boot test
-- [ ] Integrate Qt desktop shell into the bootable userspace
-- [ ] Add graphics session, window manager, app launcher, settings and file manager
-- [ ] Add installer, hardware support and release documentation
+- [x] Minimal x86_64 kernel configuration and cloud build pipeline
+- [x] Debian live root filesystem and graphical session integration
+- [ ] Confirm successful cloud build and boot-test the ISO
+- [ ] Improve desktop shell with functional launcher, files and settings apps
+- [ ] Add hardware-specific drivers, power management and networking tests
+- [ ] Add installer and release documentation
 
 ## Project principle
 
-Build and test each layer separately. GitHub Actions handles the large kernel compilation so local disk space is not needed for the kernel source tree or build output.
+Keep the local machine free of large build dependencies. GitHub Actions performs kernel compilation and ISO assembly in the cloud.
