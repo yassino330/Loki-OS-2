@@ -165,7 +165,7 @@ Window {
                     }
                 }
             }
-            Label { text: "LokiOS  •  Debian 13  •  Linux 6.12"; color: "#71839d"; font.pixelSize: 11 }
+            Label { text: "LokiOS Preview  •  Linux kernel 6.12"; color: "#71839d"; font.pixelSize: 11 }
         }
     }
 
