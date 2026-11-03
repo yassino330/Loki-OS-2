@@ -5,7 +5,7 @@ say() { printf '\n\033[1;36mLokiOS Installer\033[0m  %s\n' "$*"; }
 fail() { printf '\nERROR: %s\n' "$*" >&2; exit 1; }
 [[ $EUID -eq 0 ]] || fail "Run this installer with sudo."
 [[ -d /sys/firmware/efi ]] || fail "This first installer supports UEFI boot. Reboot the USB in UEFI mode and try again."
-for cmd in lsblk parted partprobe mkfs.vfat mkfs.ext4 blkid mount umount tar chroot; do
+for cmd in lsblk parted partprobe mkfs.vfat mkfs.ext4 blkid mount umount tar chroot udevadm findmnt blockdev; do
   command -v "$cmd" >/dev/null || fail "Missing command: $cmd"
 done
 LIVE_DIR=""
@@ -26,6 +26,14 @@ if [[ -z "$DISK" ]]; then
 fi
 [[ -b "$DISK" ]] || fail "That is not a block device."
 [[ "$(lsblk -dnro TYPE "$DISK")" == "disk" ]] || fail "Select a whole disk, not a partition."
+LIVE_SOURCE="$(findmnt -rn -o SOURCE /run/live/medium 2>/dev/null | head -n1 || true)"
+if [[ -n "$LIVE_SOURCE" && -b "$LIVE_SOURCE" ]]; then
+  LIVE_PARENT="$(lsblk -dnro PKNAME "$LIVE_SOURCE" 2>/dev/null || true)"
+  LIVE_DISK="/dev/${LIVE_PARENT:-$(basename "$LIVE_SOURCE")}"
+  [[ "$(readlink -f "$DISK")" != "$(readlink -f "$LIVE_DISK")" ]] || fail "That disk contains the currently running live media."
+fi
+DISK_BYTES="$(blockdev --getsize64 "$DISK")"
+(( DISK_BYTES >= 16 * 1024 * 1024 * 1024 )) || fail "The target disk must be at least 16 GiB."
 printf '\nYou selected: %s\n' "$DISK"
 lsblk -dpno SIZE,MODEL "$DISK"
 CONFIRM="${2:-}"
@@ -96,11 +104,12 @@ menuentry 'LokiOS' --class lokios {
 }
 GRUB
 chmod 0755 "$TARGET/etc/grub.d/09_lokios"
+chroot "$TARGET" update-initramfs -c -k "$KERNEL_RELEASE"
 chroot "$TARGET" grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=LokiOS --removable --no-nvram --recheck
 chroot "$TARGET" update-grub
 # Preserve the passwordless automatic desktop login configured in the live image.
 install -d -m 0750 "$TARGET/etc/sudoers.d"
-printf '%s\n' 'loki ALL=(ALL:ALL) NOPASSWD: ALL' > "$TARGET/etc/sudoers.d/lokios-loki"
+printf '%s\n' 'loki ALL=(root) NOPASSWD: /usr/local/sbin/lokios-install' > "$TARGET/etc/sudoers.d/lokios-loki"
 chmod 0440 "$TARGET/etc/sudoers.d/lokios-loki"
 chroot "$TARGET" visudo -cf /etc/sudoers
 chroot "$TARGET" systemctl set-default graphical.target
