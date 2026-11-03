@@ -14,9 +14,9 @@ qt_add_executable(lokios
 )
 
 # Keep QML module type names and resource paths flat and predictable.
-set_source_files_properties(src/Main.qml PROPERTIES QT_RESOURCE_ALIAS Main.qml)
-set_source_files_properties(src/components/GlassPanel.qml PROPERTIES QT_RESOURCE_ALIAS GlassPanel.qml)
-set_source_files_properties(src/components/Dock.qml PROPERTIES QT_RESOURCE_ALIAS Dock.qml)
+set_source_files_properties(src/Main.qml PROPERTIES QT_RESOURCE_ALIAS Main.qml QT_QML_SOURCE_TYPENAME Main)
+set_source_files_properties(src/components/GlassPanel.qml PROPERTIES QT_RESOURCE_ALIAS GlassPanel.qml QT_QML_SOURCE_TYPENAME GlassPanel)
+set_source_files_properties(src/components/Dock.qml PROPERTIES QT_RESOURCE_ALIAS Dock.qml QT_QML_SOURCE_TYPENAME Dock)
 
 qt_add_qml_module(lokios
     URI LokiOS
