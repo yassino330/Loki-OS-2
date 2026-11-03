@@ -104,7 +104,7 @@ menuentry 'LokiOS' --class lokios {
 }
 GRUB
 chmod 0755 "$TARGET/etc/grub.d/09_lokios"
-chroot "$TARGET" update-initramfs -c -k "$KERNEL_RELEASE"
+chroot "$TARGET" update-initramfs -u -k "$KERNEL_RELEASE"
 chroot "$TARGET" grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=LokiOS --removable --no-nvram --recheck
 chroot "$TARGET" update-grub
 # Preserve the passwordless automatic desktop login configured in the live image.
