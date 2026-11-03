@@ -70,7 +70,7 @@ for path in bin sbin lib; do
   [[ -L "$ROOTFS/$path" ]] || { echo "Expected merged-/usr symlink missing: /$path" >&2; exit 1; }
 done
 chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-  systemd-sysv initramfs-tools live-boot live-config lightdm lightdm-gtk-greeter \
+  systemd-sysv initramfs-tools live-boot live-config plymouth plymouth-themes lightdm lightdm-gtk-greeter \
   xserver-xorg-core xserver-xorg-input-libinput xserver-xorg-video-fbdev \
   openbox dbus-x11 network-manager sudo locales pcmanfm xterm lxappearance \
   libgl1-mesa-dri \
@@ -128,6 +128,15 @@ sd_mod
 ahci
 nvme
 MODULES
+
+# Use Debian's polished spinner Plymouth theme during kernel/initramfs startup.
+mkdir -p "$ROOTFS/etc/plymouth"
+cat > "$ROOTFS/etc/plymouth/plymouthd.conf" <<'PLYMOUTH'
+[Daemon]
+Theme=spinner
+ShowDelay=0
+DeviceTimeout=8
+PLYMOUTH
 
 # Keep the live image compact: omit documentation, man pages and package caches.
 cat > "$ROOTFS/etc/dpkg/dpkg.cfg.d/01-lokios-small-image" <<'DPKG'
