@@ -1,8 +1,11 @@
 CC ?= cc
 CFLAGS ?= -Os -Wall -Wextra -Werror -static
-all: lokios-init
+LDFLAGS ?=
+all: lokios-init lokios-supervisor
 lokios-init: init.c
-	$(CC) $(CFLAGS) -o $@ $<
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $<
+lokios-supervisor: supervisor.c
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $<
 clean:
-	rm -f lokios-init
+	rm -f lokios-init lokios-supervisor
 .PHONY: all clean
