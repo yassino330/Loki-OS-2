@@ -100,7 +100,7 @@ chroot "$TARGET" grub-install --target=x86_64-efi --efi-directory=/boot/efi --bo
 chroot "$TARGET" update-grub
 # Preserve the passwordless automatic desktop login configured in the live image.
 install -d -m 0750 "$TARGET/etc/sudoers.d"
-printf '%s\\n' 'loki ALL=(ALL:ALL) NOPASSWD: ALL' > "$TARGET/etc/sudoers.d/lokios-loki"
+printf '%s\n' 'loki ALL=(ALL:ALL) NOPASSWD: ALL' > "$TARGET/etc/sudoers.d/lokios-loki"
 chmod 0440 "$TARGET/etc/sudoers.d/lokios-loki"
 chroot "$TARGET" visudo -cf /etc/sudoers
 chroot "$TARGET" systemctl set-default graphical.target
