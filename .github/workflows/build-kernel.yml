@@ -90,7 +90,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: out/kernel
-          key: lokios-kernel-v1-${{ runner.os }}-${{ hashFiles('kernel/config.fragment', 'scripts/build-kernel.sh') }}
+          key: lokios-kernel-v2-${{ runner.os }}-${{ steps.kernel-source.outputs.commit }}-${{ hashFiles('kernel/config.fragment', 'scripts/build-kernel.sh') }}
 
       - name: Save updated kernel compiler cache
         if: always()
