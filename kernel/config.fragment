@@ -1,4 +1,4 @@
-# LokiOS minimal x86_64 kernel feature set
+# LokiOS x86_64 kernel configuration fragment
 # Applied on top of the upstream x86_64_defconfig.
 
 CONFIG_64BIT=y
@@ -9,15 +9,20 @@ CONFIG_BLK_DEV_INITRD=y
 CONFIG_DEVTMPFS=y
 CONFIG_DEVTMPFS_MOUNT=y
 
-# Storage and filesystems
-CONFIG_BLOCK=y
-CONFIG_PARTITION_ADVANCED=y
-CONFIG_EFI_PARTITION=y
+# Live system filesystems and overlay root
+CONFIG_SQUASHFS=y
+CONFIG_SQUASHFS_XZ=y
+CONFIG_SQUASHFS_ZSTD=y
+CONFIG_OVERLAY_FS=y
+CONFIG_TMPFS=y
+CONFIG_TMPFS_XATTR=y
+CONFIG_BLK_DEV_LOOP=y
 CONFIG_EXT4_FS=y
 CONFIG_VFAT_FS=y
 CONFIG_MSDOS_FS=y
+CONFIG_EFI_PARTITION=y
 
-# Common virtual hardware (useful for cloud testing)
+# Common virtual hardware
 CONFIG_VIRTIO=y
 CONFIG_VIRTIO_PCI=y
 CONFIG_VIRTIO_BLK=y
@@ -31,7 +36,7 @@ CONFIG_IPV6=y
 CONFIG_UNIX=y
 CONFIG_PACKET=y
 
-# Input, graphics and firmware support
+# Input and simple framebuffer
 CONFIG_INPUT=y
 CONFIG_INPUT_EVDEV=y
 CONFIG_DRM=y
@@ -41,5 +46,4 @@ CONFIG_FW_LOADER=y
 CONFIG_MODULES=y
 CONFIG_MODULE_UNLOAD=y
 
-# Keep debugging overhead modest
 CONFIG_DEBUG_INFO_NONE=y
