@@ -32,6 +32,7 @@ Window {
     }
 
     GlassPanel {
+        id: topBar
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
@@ -40,28 +41,23 @@ Window {
         cornerRadius: 18
         glassOpacity: 0.56
 
-        Row {
-            anchors.fill: parent
+        Label {
+            anchors.left: parent.left
             anchors.leftMargin: 18
+            anchors.verticalCenter: parent.verticalCenter
+            text: "◈  LokiOS"
+            color: "#f5f7fc"
+            font.pixelSize: 15
+            font.weight: Font.DemiBold
+        }
+
+        Label {
+            anchors.right: parent.right
             anchors.rightMargin: 18
-            spacing: 16
-
-            Label {
-                anchors.verticalCenter: parent.verticalCenter
-                text: "◈  LokiOS"
-                color: "#f5f7fc"
-                font.pixelSize: 15
-                font.weight: Font.DemiBold
-            }
-
-            Item { width: 1; height: 1; Layout.fillWidth: true }
-
-            Label {
-                anchors.verticalCenter: parent.verticalCenter
-                text: Qt.formatDateTime(new Date(), "ddd  •  h:mm")
-                color: "#b8c2d4"
-                font.pixelSize: 13
-            }
+            anchors.verticalCenter: parent.verticalCenter
+            text: Qt.formatDateTime(new Date(), "ddd  •  h:mm")
+            color: "#b8c2d4"
+            font.pixelSize: 13
         }
     }
 
