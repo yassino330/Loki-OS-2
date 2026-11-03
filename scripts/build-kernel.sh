@@ -23,6 +23,9 @@ make x86_64_defconfig
 scripts/kconfig/merge_config.sh -m .config "$ROOT_DIR/kernel/config.fragment"
 make olddefconfig
 
+KERNEL_RELEASE="$(make -s kernelrelease)"
+echo "$KERNEL_RELEASE" > "$OUTPUT_DIR/kernel-release.txt"
+
 make -j"$JOBS" bzImage modules
 make -j"$JOBS" modules_install INSTALL_MOD_PATH="$OUTPUT_DIR/modules-root"
 
@@ -34,4 +37,4 @@ printf '%s\n' "$KERNEL_BRANCH" > "$OUTPUT_DIR/source-branch.txt"
 tar -C "$OUTPUT_DIR/modules-root" -czf "$OUTPUT_DIR/modules.tar.gz" .
 rm -rf "$OUTPUT_DIR/modules-root"
 
-echo "Kernel build finished. Artifacts are in: $OUTPUT_DIR"
+echo "Kernel build finished: $KERNEL_RELEASE"
