@@ -152,7 +152,7 @@ install -m 0644 "$KERNEL_DIR/bzImage" "$ISO_ROOT/live/vmlinuz"
 install -m 0644 "$ROOTFS/boot/initrd.img-$KERNEL_RELEASE" "$ISO_ROOT/live/initrd.img"
 
 echo "Compressing the trimmed Debian userspace with high-ratio XZ..."
-du -sh "$ROOTFS"
+du -shx "$ROOTFS"
 mksquashfs "$ROOTFS" "$ISO_ROOT/live/filesystem.squashfs" -comp xz -Xdict-size 100% -b 1M -noappend
 
 cat > "$ISO_ROOT/boot/grub/grub.cfg" <<'GRUB'
