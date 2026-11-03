@@ -151,6 +151,11 @@ chroot "$ROOTFS" update-initramfs -c -k "$KERNEL_RELEASE"
 install -m 0644 "$KERNEL_DIR/bzImage" "$ISO_ROOT/live/vmlinuz"
 install -m 0644 "$ROOTFS/boot/initrd.img-$KERNEL_RELEASE" "$ISO_ROOT/live/initrd.img"
 
+# Never package the host's live pseudo-filesystems into the SquashFS image.
+# Unmount in reverse order before measuring or compressing the target root.
+cleanup
+trap - EXIT
+
 echo "Compressing the trimmed Debian userspace with high-ratio XZ..."
 du -shx "$ROOTFS"
 mksquashfs "$ROOTFS" "$ISO_ROOT/live/filesystem.squashfs" -comp xz -Xdict-size 100% -b 1M -noappend
