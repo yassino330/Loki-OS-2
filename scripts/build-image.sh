@@ -24,7 +24,7 @@ rm -rf "$ROOTFS" "$ISO_ROOT"
 mkdir -p "$ROOTFS" "$ISO_ROOT/live" "$ISO_ROOT/boot/grub"
 
 echo "Creating minimal Debian Trixie root filesystem..."
-debootstrap --arch=amd64 --variant=minbase --include=apt,ca-certificates,locales   trixie "$ROOTFS" "$ARCHIVE_MIRROR"
+debootstrap --merged-usr --arch=amd64 --variant=minbase --include=apt,ca-certificates,locales,usrmerge   trixie "$ROOTFS" "$ARCHIVE_MIRROR"
 
 # Enable Debian's firmware component so real machines can load vendor firmware.
 cat > "$ROOTFS/etc/apt/sources.list" <<SOURCES
