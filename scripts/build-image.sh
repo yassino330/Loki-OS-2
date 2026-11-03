@@ -80,7 +80,7 @@ chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-inst
   parted dosfstools grub-efi-amd64 grub2-common efibootmgr \
   qt6-qpa-plugins qml6-module-qtquick qml6-module-qtquick-controls \
   qml6-module-qtquick-window qml6-module-qtquick-templates \
-  cmake ninja-build g++ qt6-base-dev qt6-declarative-dev qt6-declarative-dev-tools \\
+  cmake ninja-build g++ qt6-base-dev qt6-declarative-dev qt6-declarative-dev-tools \
   keyboard-configuration console-setup xkb-data xvfb xauth
 
 echo "Building LokiOS Qt desktop shell inside the target root filesystem..."
