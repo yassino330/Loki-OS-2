@@ -34,7 +34,7 @@ public:
         process.start(QStringLiteral("lsblk"), {QStringLiteral("-dnpo"), QStringLiteral("NAME,SIZE,MODEL,TYPE")});
         if (!process.waitForFinished(3000) || process.exitCode() != 0) return {};
         QVariantList disks;
-        const auto lines = QString::fromUtf8(process.readAllStandardOutput()).split(QLatin1Char('\\n'), Qt::SkipEmptyParts);
+        const auto lines = QString::fromUtf8(process.readAllStandardOutput()).split(QLatin1Char('\n'), Qt::SkipEmptyParts);
         for (const QString &line : lines) {
             const QStringList fields = line.simplified().split(QLatin1Char(' '));
             if (fields.size() < 3 || fields.constLast() != QStringLiteral("disk")) continue;
