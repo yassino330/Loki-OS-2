@@ -219,7 +219,7 @@ Window {
         visible: root.installerOpen
         color: "#cc050a13"
         Rectangle {
-            width: 560; height: 540; radius: 30
+            width: 600; height: 650; radius: 30
             anchors.centerIn: parent
             color: "#f018263b"
             border.color: "#55ffffff"
@@ -282,14 +282,28 @@ Window {
                         background: Rectangle { radius: 12; color: "#25ffffff"; border.color: "#35ffffff" }
                     }
                     Button {
-                        text: "Erase drive and install"
-                        enabled: diskPicker.currentValue && eraseField.text === "ERASE " + String(diskPicker.currentValue).split("/").pop()
-                        onClicked: {
-                            if (SystemActions.launchInstaller(diskPicker.currentValue, eraseField.text))
-                                root.installerOpen = false
-                        }
+                        text: SystemActions.installerRunning ? "Installing…" : "Erase drive and install"
+                        enabled: !SystemActions.installerRunning && diskPicker.currentValue && eraseField.text === "ERASE " + String(diskPicker.currentValue).split("/").pop()
+                        onClicked: SystemActions.startInstaller(diskPicker.currentValue, eraseField.text)
                         contentItem: Label { text: parent.text; color: "#24160c"; font.weight: Font.DemiBold; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
                         background: Rectangle { radius: 12; color: parent.enabled ? "#ffc18e" : "#665f6874" }
+                    }
+                }
+                Label { text: SystemActions.installerStatus; color: "#b9d9ff"; font.pixelSize: 12; font.weight: Font.DemiBold }
+                ScrollView {
+                    width: parent.width
+                    height: 125
+                    clip: true
+                    background: Rectangle { radius: 12; color: "#b008101c"; border.color: "#25ffffff" }
+                    TextArea {
+                        readOnly: true
+                        wrapMode: TextEdit.Wrap
+                        text: SystemActions.installerOutput
+                        color: "#c7d7eb"
+                        font.family: "monospace"
+                        font.pixelSize: 10
+                        selectByMouse: true
+                        background: Item {}
                     }
                 }
                 Label { text: "UEFI systems • GPT partition layout • LokiOS ext4"; color: "#71839d"; font.pixelSize: 11 }
