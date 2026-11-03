@@ -1,4 +1,4 @@
-name: Build LokiOS kernel
+name: Build LokiOS image
 
 on:
   workflow_dispatch:
@@ -6,6 +6,7 @@ on:
     paths:
       - "kernel/**"
       - "scripts/build-kernel.sh"
+      - "scripts/build-image.sh"
       - ".github/workflows/build-kernel.yml"
 
 permissions:
@@ -14,26 +15,40 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 180
     steps:
       - name: Check out LokiOS
         uses: actions/checkout@v4
 
-      - name: Install kernel build dependencies
+      - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y bc bison build-essential flex git libelf-dev libssl-dev \
-            make perl python3 tar xz-utils
+          sudo apt-get install -y bc bison build-essential busybox-static cpio flex git \
+            grub-common grub-pc-bin libelf-dev libssl-dev make perl python3 tar xorriso xz-utils
 
-      - name: Build minimal kernel
+      - name: Build minimal Linux kernel
         env:
           JOBS: "2"
         run: bash scripts/build-kernel.sh
 
-      - name: Upload kernel artifacts
+      - name: Build minimal root filesystem and bootable ISO
+        run: bash scripts/build-image.sh
+
+      - name: Upload bootable LokiOS ISO
         uses: actions/upload-artifact@v4
         with:
-          name: lokios-kernel-x86_64
-          path: out/kernel/
+          name: lokios-bootable-iso-x86_64
+          path: out/LokiOS-minimal-x86_64.iso
           if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload kernel diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lokios-kernel-build-details
+          path: |
+            out/kernel/kernel.config
+            out/kernel/System.map
+          if-no-files-found: ignore
           retention-days: 7
