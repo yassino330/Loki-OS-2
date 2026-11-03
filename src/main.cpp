@@ -75,7 +75,7 @@ private:
 
     QString m_output;
     QString m_status = QStringLiteral("Ready");
-    QProcess m_installer{this};
+    QProcess m_installer;
 
 private slots:
     void appendInstallerOutput()
