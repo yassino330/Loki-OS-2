@@ -29,18 +29,19 @@ jobs:
       - name: Check out LokiOS
         uses: actions/checkout@v4
 
-      - name: Compile LokiOS PID 1 bootstrap
-        run: |
-          make -C os/init
-          file os/init/lokios-init
-          test -x os/init/lokios-init
-
       - name: Install image build dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y bc bison build-essential ccache cpio debootstrap flex git \
             grub-common grub-efi-amd64-bin grub-pc-bin libelf-dev libssl-dev make mtools perl python3 \
             squashfs-tools tar xorriso xz-utils
+
+      - name: Compile LokiOS early userspace
+        run: |
+          make -C os/init clean all
+          file os/init/lokios-init os/init/lokios-supervisor
+          test -x os/init/lokios-init
+          test -x os/init/lokios-supervisor
 
       # Reuse the built kernel and modules; rebuild only when the kernel config or build recipe changes.
       - name: Restore prebuilt Linux kernel
