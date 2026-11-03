@@ -8,7 +8,14 @@ fail() { printf '\nERROR: %s\n' "$*" >&2; exit 1; }
 for cmd in lsblk parted partprobe mkfs.vfat mkfs.ext4 blkid mount umount tar chroot; do
   command -v "$cmd" >/dev/null || fail "Missing command: $cmd"
 done
-[[ -e /live/vmlinuz && -e /live/initrd.img ]] || fail "The LokiOS live kernel or initramfs is missing."
+LIVE_DIR=""
+for candidate in /run/live/medium/live /lib/live/mount/medium/live /live; do
+  if [[ -s "$candidate/vmlinuz" && -s "$candidate/initrd.img" ]]; then
+    LIVE_DIR="$candidate"
+    break
+  fi
+done
+[[ -n "$LIVE_DIR" ]] || fail "Could not locate the booted LokiOS installation media."
 
 say "Available disks:"
 lsblk -dpno NAME,SIZE,MODEL,TYPE | awk '$4=="disk"'
@@ -18,7 +25,10 @@ read -r -p "Enter the whole disk (example: /dev/sda or /dev/nvme0n1): " DISK
 [[ "$(lsblk -dnro TYPE "$DISK")" == "disk" ]] || fail "Select a whole disk, not a partition."
 printf '\nYou selected: %s\n' "$DISK"
 lsblk -dpno SIZE,MODEL "$DISK"
-read -r -p "To permanently erase this disk, type exactly: ERASE $(basename "$DISK"): " CONFIRM
+CONFIRM="${2:-}"
+if [[ -z "$CONFIRM" ]]; then
+  read -r -p "To permanently erase this disk, type exactly: ERASE $(basename "$DISK"): " CONFIRM
+fi
 [[ "$CONFIRM" == "ERASE $(basename "$DISK")" ]] || fail "Confirmation did not match. Nothing was changed."
 
 say "Partitioning $DISK (GPT, 512 MiB EFI, remaining space for LokiOS)..."
@@ -71,8 +81,8 @@ DEBIAN_FRONTEND=noninteractive chroot "$TARGET" apt-get install -y --no-install-
   grub-efi-amd64 grub-efi-amd64-bin grub2-common efibootmgr
 KERNEL_RELEASE="$(find "$TARGET/lib/modules" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort -V | tail -n1)"
 [[ -n "$KERNEL_RELEASE" ]] || fail "No LokiOS kernel modules were found on the installed system."
-install -m 0644 /live/vmlinuz "$TARGET/boot/vmlinuz-$KERNEL_RELEASE"
-install -m 0644 /live/initrd.img "$TARGET/boot/initrd.img-$KERNEL_RELEASE"
+install -m 0644 "$LIVE_DIR/vmlinuz" "$TARGET/boot/vmlinuz-$KERNEL_RELEASE"
+install -m 0644 "$LIVE_DIR/initrd.img" "$TARGET/boot/initrd.img-$KERNEL_RELEASE"
 cat > "$TARGET/etc/grub.d/09_lokios" <<GRUB
 #!/bin/sh
 exec tail -n +3 \$0
