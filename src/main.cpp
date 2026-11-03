@@ -4,7 +4,6 @@
 #include <QProcess>
 #include <QStringList>
 #include <QVariantMap>
-#include <QRegularExpression>
 
 class SystemActions final : public QObject
 {
@@ -54,7 +53,8 @@ public:
             {QStringLiteral("-T"), QStringLiteral("Install LokiOS"),
              QStringLiteral("-e"), QStringLiteral("sudo"),
              QStringLiteral("/usr/local/sbin/lokios-install"), disk, confirmation});
-    }};
+    }
+};
 
 int main(int argc, char *argv[])
 {
