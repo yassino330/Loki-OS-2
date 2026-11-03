@@ -17,9 +17,11 @@ The latest successful CI build produced the `lokios-graphical-iso-x86_64` artifa
 - Keep Chromium preinstalled and available from the desktop.
 - Replace prototype components selectively when LokiOS-owned alternatives provide a real benefit. A custom init is **not a requirement**; systemd is acceptable.
 
-## Build
+## Build and beta publishing
 
-GitHub Actions builds the development ISO from the pinned upstream Linux kernel source and the current live-image recipe. Download the `lokios-graphical-iso-x86_64` artifact from the Actions run.
+GitHub Actions builds the development ISO from the pinned upstream Linux kernel source and the current live-image recipe. Each successful build uploads the ISO and its SHA-256 checksum as the `lokios-graphical-iso-x86_64` artifact.
+
+To publish a beta, create and push a version tag such as `v0.1.0-beta.1`. The workflow builds the image, verifies the ISO, calculates its checksum, and creates a GitHub Release with both files attached. A release is published only if the build succeeds. See [Beta release notes](docs/BETA-RELEASE.md).
 
 ## Safety
 
