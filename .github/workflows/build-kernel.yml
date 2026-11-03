@@ -139,5 +139,7 @@ jobs:
             out/kernel/kernel.config
             out/kernel/System.map
             out/kernel/kernel-release.txt
+            out/lokios-ui-smoke.log
+            out/lightdm-effective.conf
           if-no-files-found: ignore
           retention-days: 7
