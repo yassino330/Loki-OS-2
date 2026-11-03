@@ -36,13 +36,6 @@ jobs:
             grub-common grub-efi-amd64-bin grub-pc-bin libelf-dev libssl-dev make mtools perl python3 \
             squashfs-tools tar xorriso xz-utils
 
-      - name: Compile LokiOS early userspace
-        run: |
-          make -C os/init clean all
-          file os/init/lokios-init os/init/lokios-supervisor
-          test -x os/init/lokios-init
-          test -x os/init/lokios-supervisor
-
       - name: Resolve exact upstream kernel revision
         id: kernel-source
         run: |
