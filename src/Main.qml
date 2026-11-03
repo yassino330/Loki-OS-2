@@ -12,6 +12,8 @@ Window {
     title: "LokiOS"
     color: "#101522"
 
+    property string activePanel: "home"
+
     Rectangle {
         anchors.fill: parent
         gradient: Gradient {
@@ -64,6 +66,7 @@ Window {
     Column {
         anchors.centerIn: parent
         spacing: 12
+        visible: root.activePanel === "home"
 
         Label {
             anchors.horizontalCenter: parent.horizontalCenter
@@ -72,7 +75,6 @@ Window {
             font.pixelSize: 64
             font.weight: Font.Light
         }
-
         Label {
             anchors.horizontalCenter: parent.horizontalCenter
             text: "A calmer way to compute."
@@ -81,9 +83,70 @@ Window {
         }
     }
 
+    GlassPanel {
+        id: launcher
+        width: 420
+        height: 330
+        anchors.centerIn: parent
+        cornerRadius: 24
+        glassOpacity: 0.82
+        visible: root.activePanel !== "home"
+
+        Column {
+            anchors.fill: parent
+            anchors.margins: 24
+            spacing: 14
+
+            Label {
+                text: root.activePanel === "apps" ? "Applications"
+                      : root.activePanel === "files" ? "Files"
+                      : "System"
+                color: "#f5f7fc"
+                font.pixelSize: 25
+                font.weight: Font.DemiBold
+            }
+            Label {
+                text: root.activePanel === "settings"
+                      ? "LokiOS preview • Debian 13 • Linux 6.12"
+                      : "Open an application"
+                color: "#b8c2d4"
+                font.pixelSize: 13
+            }
+            Button {
+                text: "Terminal"
+                visible: root.activePanel === "apps" || root.activePanel === "settings"
+                onClicked: SystemActions.launch("xterm")
+            }
+            Button {
+                text: "File Manager"
+                visible: root.activePanel === "apps" || root.activePanel === "files"
+                onClicked: SystemActions.launch("pcmanfm")
+            }
+            Button {
+                text: "Appearance"
+                visible: root.activePanel === "apps" || root.activePanel === "settings"
+                onClicked: SystemActions.launch("lxappearance")
+            }
+            Button {
+                text: "Close"
+                onClicked: root.activePanel = "home"
+            }
+        }
+    }
+
     Dock {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 24
+        onAppClicked: function(appName) {
+            if (appName === "Home")
+                root.activePanel = "home"
+            else if (appName === "Apps")
+                root.activePanel = "apps"
+            else if (appName === "Files")
+                root.activePanel = "files"
+            else if (appName === "Settings")
+                root.activePanel = "settings"
+        }
     }
 }

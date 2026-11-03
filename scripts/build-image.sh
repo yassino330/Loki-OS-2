@@ -18,20 +18,26 @@ for tool in debootstrap mksquashfs grub-mkrescue; do
 done
 [[ -s "$KERNEL_DIR/bzImage" ]] || { echo "Kernel image is missing." >&2; exit 1; }
 [[ -s "$KERNEL_DIR/modules.tar.gz" ]] || { echo "Kernel modules archive is missing." >&2; exit 1; }
+[[ -s "$KERNEL_DIR/kernel-release.txt" ]] || { echo "Kernel release metadata is missing." >&2; exit 1; }
 
 rm -rf "$ROOTFS" "$ISO_ROOT"
 mkdir -p "$ROOTFS" "$ISO_ROOT/live" "$ISO_ROOT/boot/grub"
 
 echo "Creating minimal Debian Trixie root filesystem..."
-debootstrap --arch=amd64 --variant=minbase --include=apt,ca-certificates,locales \
-  trixie "$ROOTFS" "$ARCHIVE_MIRROR"
+debootstrap --arch=amd64 --variant=minbase --include=apt,ca-certificates,locales   trixie "$ROOTFS" "$ARCHIVE_MIRROR"
+
+# Enable Debian's firmware component so real machines can load vendor firmware.
+cat > "$ROOTFS/etc/apt/sources.list" <<SOURCES
+deb $ARCHIVE_MIRROR trixie main contrib non-free non-free-firmware
+deb $ARCHIVE_MIRROR trixie-updates main contrib non-free non-free-firmware
+deb http://security.debian.org/debian-security trixie-security main contrib non-free non-free-firmware
+SOURCES
 
 cp /etc/resolv.conf "$ROOTFS/etc/resolv.conf"
 mkdir -p "$ROOTFS/usr/src/lokios"
 cp "$ROOT_DIR/CMakeLists.txt" "$ROOTFS/usr/src/lokios/"
 cp -a "$ROOT_DIR/src" "$ROOTFS/usr/src/lokios/"
 
-mkdir -p "$ROOTFS/lib/modules"
 tar -xzf "$KERNEL_DIR/modules.tar.gz" -C "$ROOTFS"
 
 cat > "$ROOTFS/etc/hostname" <<'HOST'
@@ -60,7 +66,11 @@ chroot "$ROOTFS" apt-get update
 chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
   systemd-sysv initramfs-tools live-boot live-config lightdm lightdm-gtk-greeter \
   xserver-xorg-core xserver-xorg-input-libinput xserver-xorg-video-fbdev \
+  xserver-xorg-video-amdgpu xserver-xorg-video-intel xserver-xorg-video-nouveau \
   openbox dbus-x11 network-manager sudo locales pcmanfm xterm \
+  firmware-linux firmware-linux-nonfree firmware-misc-nonfree \
+  firmware-iwlwifi firmware-realtek firmware-atheros firmware-brcm80211 \
+  firmware-mediatek firmware-amd-graphics \
   fonts-dejavu-core x11-xserver-utils \
   qt6-qpa-plugins qml6-module-qtquick qml6-module-qtquick-controls \
   qml6-module-qtquick-window qml6-module-qtquick-templates \
@@ -72,11 +82,18 @@ chroot "$ROOTFS" cmake --build /tmp/lokios-build --parallel 2
 install -D -m 0755 "$ROOTFS/tmp/lokios-build/lokios" "$ROOTFS/usr/local/bin/lokios"
 rm -rf "$ROOTFS/usr/src/lokios" "$ROOTFS/tmp/lokios-build"
 
+# Create the live account explicitly; do not depend on live-config defaults.
+chroot "$ROOTFS" useradd --create-home --shell /bin/bash --groups audio,video,plugdev,netdev,sudo loki
+echo 'loki:lokios' | chroot "$ROOTFS" chpasswd
+chroot "$ROOTFS" passwd -l root
+
 mkdir -p "$ROOTFS/usr/local/bin" "$ROOTFS/usr/share/xsessions" "$ROOTFS/etc/lightdm/lightdm.conf.d"
 cat > "$ROOTFS/usr/local/bin/lokios-session" <<'SESSION'
 #!/bin/sh
+export XDG_SESSION_TYPE=x11
+export QT_QPA_PLATFORM=xcb
 openbox-session &
-exec env QT_QPA_PLATFORM=xcb /usr/local/bin/lokios
+exec /usr/local/bin/lokios
 SESSION
 chmod 0755 "$ROOTFS/usr/local/bin/lokios-session"
 
@@ -99,32 +116,34 @@ LIGHTDM
 cat > "$ROOTFS/etc/initramfs-tools/modules" <<'MODULES'
 squashfs
 overlay
+loop
 MODULES
 
-# Remove build-only tools while keeping the Qt runtime and QML modules.
+# Retain Qt runtime modules; remove only build dependencies.
 chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get purge -y \
   cmake ninja-build g++ qt6-base-dev qt6-declarative-dev qt6-declarative-dev-tools
 chroot "$ROOTFS" apt-get autoremove -y
 chroot "$ROOTFS" apt-get clean
 rm -rf "$ROOTFS/var/lib/apt/lists/"*
 
-# Build the initramfs with the matching kernel modules and live-boot hooks.
+# Include modules needed to mount the compressed live root early.
 chroot "$ROOTFS" update-initramfs -c -k "$KERNEL_RELEASE"
 install -m 0644 "$KERNEL_DIR/bzImage" "$ISO_ROOT/live/vmlinuz"
 install -m 0644 "$ROOTFS/boot/initrd.img-$KERNEL_RELEASE" "$ISO_ROOT/live/initrd.img"
 
-echo "Compressing the Debian userspace with fast Zstandard compression..."
-mksquashfs "$ROOTFS" "$ISO_ROOT/live/filesystem.squashfs" -comp zstd -Xcompression-level 15 -b 1M -noappend
+echo "Compressing the Debian userspace with Zstandard..."
+mksquashfs "$ROOTFS" "$ISO_ROOT/live/filesystem.squashfs" -comp zstd -Xcompression-level 12 -b 1M -noappend
 
 cat > "$ISO_ROOT/boot/grub/grub.cfg" <<'GRUB'
 set timeout=5
 set default=0
 
 menuentry "LokiOS — Graphical Live Desktop" {
-    linux /live/vmlinuz boot=live components quiet splash hostname=lokios username=loki
+    linux /live/vmlinuz boot=live components quiet splash hostname=lokios
     initrd /live/initrd.img
 }
 GRUB
 
 grub-mkrescue -o "$OUTPUT_DIR/LokiOS-graphical-x86_64.iso" "$ISO_ROOT"
+test -s "$OUTPUT_DIR/LokiOS-graphical-x86_64.iso"
 echo "Created $OUTPUT_DIR/LokiOS-graphical-x86_64.iso"
