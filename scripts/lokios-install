@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+say() { printf '\n\033[1;36mLokiOS Installer\033[0m  %s\n' "$*"; }
+fail() { printf '\nERROR: %s\n' "$*" >&2; exit 1; }
+[[ $EUID -eq 0 ]] || fail "Run this installer with sudo."
+[[ -d /sys/firmware/efi ]] || fail "This first installer supports UEFI boot. Reboot the USB in UEFI mode and try again."
+for cmd in lsblk parted partprobe mkfs.vfat mkfs.ext4 blkid mount umount tar chroot; do
+  command -v "$cmd" >/dev/null || fail "Missing command: $cmd"
+done
+[[ -e /live/vmlinuz && -e /live/initrd.img ]] || fail "The LokiOS live kernel or initramfs is missing."
+
+say "Available disks:"
+lsblk -dpno NAME,SIZE,MODEL,TYPE | awk '$4=="disk"'
+printf '\nWARNING: The selected disk will be completely erased. Back up its data first.\n'
+read -r -p "Enter the whole disk (example: /dev/sda or /dev/nvme0n1): " DISK
+[[ -b "$DISK" ]] || fail "That is not a block device."
+[[ "$(lsblk -dnro TYPE "$DISK")" == "disk" ]] || fail "Select a whole disk, not a partition."
+printf '\nYou selected: %s\n' "$DISK"
+lsblk -dpno SIZE,MODEL "$DISK"
+read -r -p "To permanently erase this disk, type exactly: ERASE $(basename "$DISK"): " CONFIRM
+[[ "$CONFIRM" == "ERASE $(basename "$DISK")" ]] || fail "Confirmation did not match. Nothing was changed."
+
+say "Partitioning $DISK (GPT, 512 MiB EFI, remaining space for LokiOS)..."
+if findmnt -rn -S "$DISK" >/dev/null || lsblk -nrpo MOUNTPOINT "$DISK" | grep -q .; then
+  fail "The selected disk has mounted filesystems. Unmount them before installing."
+fi
+parted -s "$DISK" mklabel gpt
+parted -s "$DISK" mkpart ESP fat32 1MiB 513MiB
+parted -s "$DISK" set 1 esp on
+parted -s "$DISK" mkpart lokios-root ext4 513MiB 100%
+partprobe "$DISK"
+udevadm settle
+mapfile -t PARTS < <(lsblk -lnpo NAME,TYPE "$DISK" | awk '$2=="part"{print $1}')
+[[ ${#PARTS[@]} -eq 2 ]] || fail "Could not identify the two new partitions."
+EFI_PART="${PARTS[0]}"
+ROOT_PART="${PARTS[1]}"
+
+say "Formatting partitions..."
+mkfs.vfat -F 32 -n LOKI_EFI "$EFI_PART"
+mkfs.ext4 -F -L LokiOS "$ROOT_PART"
+
+TARGET=/mnt/lokios-install
+mkdir -p "$TARGET"
+mount "$ROOT_PART" "$TARGET"
+mkdir -p "$TARGET/boot/efi"
+mount "$EFI_PART" "$TARGET/boot/efi"
+cleanup() { umount -R "$TARGET" 2>/dev/null || true; }
+trap cleanup EXIT
+
+say "Copying the running LokiOS system to disk (this can take several minutes)..."
+tar --one-file-system --exclude=/dev --exclude=/proc --exclude=/sys --exclude=/run \
+  --exclude=/tmp --exclude=/mnt --exclude=/media --exclude=/lost+found \
+  --exclude=/var/cache/apt/archives -cpf - -C / . | tar -xpf - -C "$TARGET"
+
+ROOT_UUID="$(blkid -s UUID -o value "$ROOT_PART")"
+EFI_UUID="$(blkid -s UUID -o value "$EFI_PART")"
+cat > "$TARGET/etc/fstab" <<FSTAB
+UUID=$ROOT_UUID / ext4 defaults,noatime 0 1
+UUID=$EFI_UUID /boot/efi vfat umask=0077 0 1
+FSTAB
+
+say "Installing the UEFI bootloader in the new system..."
+mount --bind /dev "$TARGET/dev"
+mount --bind /dev/pts "$TARGET/dev/pts"
+mount -t proc proc "$TARGET/proc"
+mount -t sysfs sysfs "$TARGET/sys"
+mount --bind /run "$TARGET/run"
+chroot "$TARGET" apt-get update
+DEBIAN_FRONTEND=noninteractive chroot "$TARGET" apt-get install -y --no-install-recommends \
+  grub-efi-amd64 grub-efi-amd64-bin grub2-common efibootmgr
+KERNEL_RELEASE="$(find "$TARGET/lib/modules" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort -V | tail -n1)"
+[[ -n "$KERNEL_RELEASE" ]] || fail "No LokiOS kernel modules were found on the installed system."
+install -m 0644 /live/vmlinuz "$TARGET/boot/vmlinuz-$KERNEL_RELEASE"
+install -m 0644 /live/initrd.img "$TARGET/boot/initrd.img-$KERNEL_RELEASE"
+cat > "$TARGET/etc/grub.d/09_lokios" <<GRUB
+#!/bin/sh
+exec tail -n +3 \$0
+menuentry 'LokiOS' --class lokios {
+    search --no-floppy --fs-uuid --set=root $ROOT_UUID
+    linux /boot/vmlinuz-$KERNEL_RELEASE root=UUID=$ROOT_UUID ro quiet
+    initrd /boot/initrd.img-$KERNEL_RELEASE
+}
+GRUB
+chmod 0755 "$TARGET/etc/grub.d/09_lokios"
+chroot "$TARGET" grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=LokiOS --recheck
+chroot "$TARGET" update-grub
+sed -i '/autologin-user=/d;/autologin-user-timeout=/d' "$TARGET/etc/lightdm/lightdm.conf.d/50-lokios.conf"
+say "Set a new password for the installed 'loki' account."
+chroot "$TARGET" passwd loki
+chroot "$TARGET" apt-get clean
+say "Installation finished. Remove the USB drive and reboot into LokiOS."

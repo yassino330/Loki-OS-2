@@ -71,6 +71,7 @@ chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-inst
   firmware-iwlwifi firmware-realtek firmware-atheros firmware-brcm80211 \
   firmware-mediatek intel-microcode amd64-microcode \
   fonts-dejavu-core x11-xserver-utils \
+  parted dosfstools grub-efi-amd64 grub2-common efibootmgr \
   qt6-qpa-plugins qml6-module-qtquick qml6-module-qtquick-controls \
   qml6-module-qtquick-window qml6-module-qtquick-templates \
   cmake ninja-build g++ qt6-base-dev qt6-declarative-dev qt6-declarative-dev-tools
@@ -79,6 +80,7 @@ echo "Building LokiOS Qt desktop shell inside the target root filesystem..."
 chroot "$ROOTFS" cmake -S /usr/src/lokios -B /tmp/lokios-build -G Ninja -DCMAKE_BUILD_TYPE=Release
 chroot "$ROOTFS" cmake --build /tmp/lokios-build --parallel 2
 install -D -m 0755 "$ROOTFS/tmp/lokios-build/lokios" "$ROOTFS/usr/local/bin/lokios"
+install -D -m 0755 "$ROOT_DIR/scripts/lokios-install" "$ROOTFS/usr/local/sbin/lokios-install"
 rm -rf "$ROOTFS/usr/src/lokios" "$ROOTFS/tmp/lokios-build"
 
 # Create the live account explicitly; do not depend on live-config defaults.

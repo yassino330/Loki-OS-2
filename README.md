@@ -36,4 +36,4 @@ The image creates an auto-login desktop account named `loki`. It currently uses 
 - [x] Broader graphics, network, storage and USB kernel configuration
 - [x] Explicit live desktop user and firmware repository setup
 - [ ] Verify successful build and boot-test ISO
-- [ ] Real settings app, installer, power management and hardware testing
+- [x] Initial UEFI disk installer with explicit disk-erasure confirmation\n- [ ] Real settings app, power management and hardware testing
