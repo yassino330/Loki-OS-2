@@ -31,7 +31,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y bc bison build-essential ccache cpio debootstrap flex git \
-            grub-common grub-pc-bin libelf-dev libssl-dev make perl python3 \
+            grub-common grub-pc-bin libelf-dev libssl-dev make mtools perl python3 \
             squashfs-tools tar xorriso xz-utils
 
       # Reuse compiled kernel objects when the kernel configuration is unchanged.

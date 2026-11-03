@@ -67,12 +67,10 @@ chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-inst
   systemd-sysv initramfs-tools live-boot live-config lightdm lightdm-gtk-greeter \
   xserver-xorg-core xserver-xorg-input-libinput xserver-xorg-video-fbdev \
   xserver-xorg-video-amdgpu xserver-xorg-video-intel xserver-xorg-video-nouveau \
-  openbox dbus-x11 network-manager sudo locales pcmanfm xterm lxappearance \
-  mesa-utils mesa-vulkan-drivers libgl1-mesa-dri \
+  openbox dbus-x11 network-manager sudo locales pcmanfm xterm \
   firmware-linux firmware-linux-nonfree firmware-misc-nonfree \
   firmware-iwlwifi firmware-realtek firmware-atheros firmware-brcm80211 \
-  firmware-mediatek firmware-amd-graphics firmware-intel-graphics firmware-nvidia-graphics \
-  intel-microcode amd64-microcode \
+  firmware-mediatek firmware-amd-graphics \
   fonts-dejavu-core x11-xserver-utils \
   qt6-qpa-plugins qml6-module-qtquick qml6-module-qtquick-controls \
   qml6-module-qtquick-window qml6-module-qtquick-templates \
