@@ -43,7 +43,8 @@ make olddefconfig
 # live root filesystem and its module tree are mounted.
 for option in CONFIG_INPUT_EVDEV CONFIG_HID CONFIG_HID_GENERIC CONFIG_USB_HID \
               CONFIG_SERIO CONFIG_SERIO_I8042 CONFIG_SERIO_LIBPS2 \
-              CONFIG_KEYBOARD_ATKBD CONFIG_MOUSE_PS2 CONFIG_VIRTIO_INPUT; do
+              CONFIG_KEYBOARD_ATKBD CONFIG_MOUSE_PS2 CONFIG_VIRTIO_INPUT \
+              CONFIG_I2C_HID CONFIG_I2C_HID_ACPI; do
   if ! grep -qx "${option}=y" .config; then
     echo "Required built-in keyboard/input option is missing: ${option}" >&2
     exit 4
