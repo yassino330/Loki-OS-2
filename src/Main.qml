@@ -164,7 +164,6 @@ Window {
                     }
                 }
             }
-            Item { width: 1; height: 1; Layout.fillHeight: true }
             Label { text: "LokiOS  •  Debian 13  •  Linux 6.12"; color: "#71839d"; font.pixelSize: 11 }
         }
     }
