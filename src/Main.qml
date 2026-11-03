@@ -14,6 +14,7 @@ Window {
     property string activePanel: "home"
     property bool welcomeVisible: true
     property bool menuOpen: false
+    property bool installerOpen: false
     property bool quickOpen: false
     property string searchText: ""
 
@@ -158,7 +159,7 @@ Window {
                                 if (modelData.cmd === "terminal") SystemActions.launch("xterm")
                                 else if (modelData.cmd === "files") SystemActions.launch("pcmanfm")
                                 else if (modelData.cmd === "appearance") SystemActions.launch("lxappearance")
-                                else if (modelData.cmd === "installer") SystemActions.launchInstaller()
+                                else if (modelData.cmd === "installer") { root.installerOpen = true; root.activePanel = "home" }
                             }
                         }
                     }
@@ -206,6 +207,92 @@ Window {
                     ToolTip.visible: hovered; ToolTip.text: modelData.name
                     onClicked: { root.activePanel = modelData.panel; root.quickOpen = false }
                 }
+            }
+        }
+    }
+
+
+    // Guided installer hand-off: disk selection and explicit destructive confirmation.
+    Rectangle {
+        anchors.fill: parent
+        z: 20
+        visible: root.installerOpen
+        color: "#cc050a13"
+        Rectangle {
+            width: 560; height: 540; radius: 30
+            anchors.centerIn: parent
+            color: "#f018263b"
+            border.color: "#55ffffff"
+            Column {
+                anchors.fill: parent; anchors.margins: 30; spacing: 16
+                Row {
+                    width: parent.width
+                    Label { text: "Install LokiOS"; color: "#f4f7ff"; font.pixelSize: 29; font.weight: Font.DemiBold }
+                    Item { width: 1; height: 1 }
+                    ToolButton { anchors.right: parent.right; text: "×"; font.pixelSize: 22; palette.buttonText: "#dce8fa"; onClicked: root.installerOpen = false }
+                }
+                Label {
+                    width: parent.width; wrapMode: Text.WordWrap
+                    text: "Choose where LokiOS should be installed. The selected drive will be erased completely."
+                    color: "#b8c7db"; font.pixelSize: 14
+                }
+                Label { text: "INSTALLATION DRIVE"; color: "#91a8c5"; font.pixelSize: 11; font.letterSpacing: 1.2 }
+                ComboBox {
+                    id: diskPicker
+                    width: parent.width
+                    model: SystemActions.installDisks()
+                    textRole: "label"
+                    valueRole: "device"
+                    enabled: count > 0
+                    background: Rectangle { radius: 12; color: "#25ffffff"; border.color: "#35ffffff" }
+                    contentItem: Text {
+                        leftPadding: 12; text: diskPicker.displayText
+                        color: "#f2f6ff"; verticalAlignment: Text.AlignVCenter
+                        elide: Text.ElideRight
+                    }
+                }
+                Rectangle {
+                    width: parent.width; height: 94; radius: 15
+                    color: "#3a8e4e38"; border.color: "#70d69b72"
+                    Column {
+                        anchors.fill: parent; anchors.margins: 14; spacing: 6
+                        Label { text: "⚠  THIS WILL ERASE THE SELECTED DRIVE"; color: "#ffd2a8"; font.pixelSize: 12; font.weight: Font.DemiBold }
+                        Label {
+                            width: parent.width; wrapMode: Text.WordWrap
+                            text: "Back up documents and other files first. Installation cannot be undone."
+                            color: "#d9c7b8"; font.pixelSize: 12
+                        }
+                    }
+                }
+                Label {
+                    text: diskPicker.currentValue ? "Type ERASE " + String(diskPicker.currentValue).split("/").pop() + " to confirm" : "No eligible disk detected"
+                    color: "#b8c7db"; font.pixelSize: 13
+                }
+                TextField {
+                    id: eraseField; width: parent.width
+                    placeholderText: "ERASE " + (diskPicker.currentValue ? String(diskPicker.currentValue).split("/").pop() : "disk")
+                    color: "#ffffff"; placeholderTextColor: "#7788a2"
+                    background: Rectangle { radius: 12; color: "#1cffffff"; border.color: "#25ffffff" }
+                }
+                Row {
+                    width: parent.width; spacing: 10
+                    Button {
+                        text: "Cancel"; onClicked: root.installerOpen = false
+                        contentItem: Label { text: parent.text; color: "#eaf2ff"; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
+                        background: Rectangle { radius: 12; color: "#25ffffff"; border.color: "#35ffffff" }
+                    }
+                    Button {
+                        text: "Erase drive and install"
+                        enabled: diskPicker.currentValue && eraseField.text === "ERASE " + String(diskPicker.currentValue).split("/").pop()
+                        onClicked: {
+                            if (SystemActions.launchInstaller(diskPicker.currentValue, eraseField.text))
+                                root.installerOpen = false
+                        }
+                        contentItem: Label { text: parent.text; color: "#24160c"; font.weight: Font.DemiBold; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
+                        background: Rectangle { radius: 12; color: parent.enabled ? "#ffc18e" : "#665f6874" }
+                    }
+                }
+                Label { text: "UEFI systems • GPT partition layout • LokiOS ext4"; color: "#71839d"; font.pixelSize: 11 }
             }
         }
     }
