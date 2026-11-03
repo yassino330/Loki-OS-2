@@ -22,7 +22,7 @@ public:
     {
         static const QStringList allowed{
             QStringLiteral("pcmanfm"), QStringLiteral("xterm"),
-            QStringLiteral("lxappearance"), QStringLiteral("xfce4-terminal")
+            QStringLiteral("lxappearance"), QStringLiteral("xfce4-terminal"), QStringLiteral("chromium")
         };
         if (!allowed.contains(program)) return false;
         return QProcess::startDetached(program, {});
