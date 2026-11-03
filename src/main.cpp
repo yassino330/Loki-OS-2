@@ -22,6 +22,11 @@ public:
             return false;
         return QProcess::startDetached(program, {});
     }
+
+    Q_INVOKABLE bool launchInstaller()
+    {
+        return QProcess::startDetached(QStringLiteral("xterm"), {QStringLiteral("-T"), QStringLiteral("Install LokiOS"), QStringLiteral("-e"), QStringLiteral("sudo"), QStringLiteral("/usr/local/sbin/lokios-install")});
+    }
 };
 
 int main(int argc, char *argv[])
