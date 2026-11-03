@@ -1,27 +1,26 @@
 # LokiOS
 
-LokiOS is an independent operating-system project. Its requirement is that the **Linux kernel is the only upstream operating-system component**. The boot experience, userspace, init/service manager, desktop, login, installer, settings, system utilities, and branding are LokiOS-owned.
+LokiOS is an independent Linux-based desktop operating-system project. It uses the upstream Linux kernel and may use a proven init/service manager such as systemd; LokiOS focuses its custom engineering on the desktop experience, installer, system integration, branding, and applications.
 
-## Current repository status — honest snapshot
+## Current repository status
 
-The current ISO pipeline is still a prototype. It uses a Debian Trixie root filesystem, Debian packages, live-boot, GRUB, Xorg, LightDM, Openbox, and a Qt Quick desktop shell. It is **not yet compliant** with the LokiOS-only-userspace requirement. The current installer also copies that prototype root filesystem to disk; it is not the requested Windows-style installation wizard.
+The current ISO pipeline builds a Debian Trixie-based live prototype with a LokiOS Qt desktop shell, Chromium, and a graphical disk-installation front end. It currently relies on Debian packages, systemd, live-boot, GRUB, Xorg, LightDM, and Openbox. It is a working build artifact, **not yet a fully independent distribution or a hardware-validated installer**.
 
-The current ISO is an engineering prototype, not the finished LokiOS operating system. Do not describe it as a fully custom OS or as boot-tested on hardware.
+The latest successful CI build produced the `lokios-graphical-iso-x86_64` artifact. A successful build confirms the ISO was generated; it does not prove it boots correctly on every computer or that installation is safe for daily use.
 
-## Target architecture
+## Project priorities
 
-- Upstream Linux kernel and hardware drivers.
-- LokiOS-owned boot splash and boot flow.
-- LokiOS userspace, core utilities, init/service manager, and system configuration.
-- LokiOS login/session manager and desktop shell.
-- LokiOS graphical full-screen installer with language, keyboard, network, disk selection, progress, and restart stages.
-- LokiOS settings, file manager, terminal, app launcher, notifications, and system tools.
-- LokiOS branding throughout; no distro greeter, installer, desktop, or branding.
+- Polish the LokiOS desktop shell, app launcher, dock, quick settings, and settings experience.
+- Build a proper full-screen, Windows-style installer with language, keyboard, network, disk selection, progress, and restart stages.
+- Keep destructive disk operations explicit and guarded.
+- Improve boot branding, reliability, and hardware compatibility.
+- Keep Chromium preinstalled and available from the desktop.
+- Replace prototype components selectively when LokiOS-owned alternatives provide a real benefit. A custom init is **not a requirement**; systemd is acceptable.
 
-## Build pipeline
+## Build
 
-The current GitHub Actions pipeline builds a development ISO using the prototype implementation. It does not yet produce the target architecture above. The transition requires replacing the Debian root filesystem and its package/service assumptions, then validating the resulting ISO in a virtual machine before calling it usable.
+GitHub Actions builds the development ISO from the pinned upstream Linux kernel source and the current live-image recipe. Download the `lokios-graphical-iso-x86_64` artifact from the Actions run.
 
-## Kernel
+## Safety
 
-The kernel is based on upstream Linux. LokiOS does not claim to have written its own kernel. Driver and hardware support must be tested on target machines.
+Treat the ISO as a development preview. Test it in a virtual machine first. Do not install it on a disk containing important data until the installer has been tested against disposable virtual disks and the installed system has been verified to boot.
