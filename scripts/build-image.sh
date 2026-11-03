@@ -66,13 +66,10 @@ chroot "$ROOTFS" apt-get update
 chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
   systemd-sysv initramfs-tools live-boot live-config lightdm lightdm-gtk-greeter \
   xserver-xorg-core xserver-xorg-input-libinput xserver-xorg-video-fbdev \
-  xserver-xorg-video-amdgpu xserver-xorg-video-intel xserver-xorg-video-nouveau \
   openbox dbus-x11 network-manager sudo locales pcmanfm xterm lxappearance \
-  mesa-utils mesa-vulkan-drivers libgl1-mesa-dri \
-  firmware-linux firmware-linux-nonfree firmware-misc-nonfree \
+  libgl1-mesa-dri \
   firmware-iwlwifi firmware-realtek firmware-atheros firmware-brcm80211 \
-  firmware-mediatek firmware-amd-graphics firmware-intel-graphics firmware-nvidia-graphics \
-  intel-microcode amd64-microcode \
+  firmware-mediatek intel-microcode amd64-microcode \
   fonts-dejavu-core x11-xserver-utils \
   qt6-qpa-plugins qml6-module-qtquick qml6-module-qtquick-controls \
   qml6-module-qtquick-window qml6-module-qtquick-templates \
@@ -124,6 +121,16 @@ ahci
 nvme
 MODULES
 
+# Keep the live image compact: omit documentation, man pages and package caches.
+cat > "$ROOTFS/etc/dpkg/dpkg.cfg.d/01-lokios-small-image" <<'DPKG'
+path-exclude=/usr/share/doc/*
+path-include=/usr/share/doc/*/copyright
+path-exclude=/usr/share/man/*
+path-exclude=/usr/share/info/*
+path-exclude=/usr/share/locale/*
+path-include=/usr/share/locale/en*
+DPKG
+
 # Retain Qt runtime modules; remove only build dependencies.
 chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get purge -y \
   cmake ninja-build g++ qt6-base-dev qt6-declarative-dev qt6-declarative-dev-tools
@@ -136,8 +143,9 @@ chroot "$ROOTFS" update-initramfs -c -k "$KERNEL_RELEASE"
 install -m 0644 "$KERNEL_DIR/bzImage" "$ISO_ROOT/live/vmlinuz"
 install -m 0644 "$ROOTFS/boot/initrd.img-$KERNEL_RELEASE" "$ISO_ROOT/live/initrd.img"
 
-echo "Compressing the Debian userspace with Zstandard..."
-mksquashfs "$ROOTFS" "$ISO_ROOT/live/filesystem.squashfs" -comp zstd -Xcompression-level 12 -b 1M -noappend
+echo "Compressing the trimmed Debian userspace with high-ratio XZ..."
+du -sh "$ROOTFS"
+mksquashfs "$ROOTFS" "$ISO_ROOT/live/filesystem.squashfs" -comp xz -Xdict-size 100% -b 1M -noappend
 
 cat > "$ISO_ROOT/boot/grub/grub.cfg" <<'GRUB'
 set timeout=5
