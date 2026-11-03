@@ -20,7 +20,10 @@ done
 say "Available disks:"
 lsblk -dpno NAME,SIZE,MODEL,TYPE | awk '$4=="disk"'
 printf '\nWARNING: The selected disk will be completely erased. Back up its data first.\n'
-read -r -p "Enter the whole disk (example: /dev/sda or /dev/nvme0n1): " DISK
+DISK="${1:-}"
+if [[ -z "$DISK" ]]; then
+  read -r -p "Enter the whole disk (example: /dev/sda or /dev/nvme0n1): " DISK
+fi
 [[ -b "$DISK" ]] || fail "That is not a block device."
 [[ "$(lsblk -dnro TYPE "$DISK")" == "disk" ]] || fail "Select a whole disk, not a partition."
 printf '\nYou selected: %s\n' "$DISK"
