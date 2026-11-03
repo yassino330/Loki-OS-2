@@ -38,7 +38,7 @@ jobs:
       - name: Restore kernel compiler cache
         uses: actions/cache@v4
         with:
-          path: ~/.cache/ccache
+          path: ${{ runner.temp }}/ccache
           key: lokios-ccache-${{ runner.os }}-${{ hashFiles('kernel/config.fragment') }}
           restore-keys: |
             lokios-ccache-${{ runner.os }}-
@@ -46,7 +46,7 @@ jobs:
       - name: Build LokiOS kernel
         env:
           JOBS: "2"
-          CCACHE_DIR: ~/.cache/ccache
+          CCACHE_DIR: ${{ runner.temp }}/ccache
         run: |
           ccache --max-size=2G
           bash scripts/build-kernel.sh
