@@ -1,39 +1,27 @@
 # LokiOS
 
-A Debian 13 (Trixie) live Linux desktop prototype with a minimalist Liquid Glass-inspired Qt Quick shell.
+LokiOS is an independent operating-system project. Its requirement is that the **Linux kernel is the only upstream operating-system component**. The boot experience, userspace, init/service manager, desktop, login, installer, settings, system utilities, and branding are LokiOS-owned.
 
-## Build status
+## Current repository status — honest snapshot
 
-GitHub Actions builds an upstream Linux 6.12.y kernel with LokiOS configuration and assembles a Debian live ISO. The image is a development preview, not a production-ready distribution. It still requires successful cloud build validation and boot testing on real and virtual hardware.
+The current ISO pipeline is still a prototype. It uses a Debian Trixie root filesystem, Debian packages, live-boot, GRUB, Xorg, LightDM, Openbox, and a Qt Quick desktop shell. It is **not yet compliant** with the LokiOS-only-userspace requirement. The current installer also copies that prototype root filesystem to disk; it is not the requested Windows-style installation wizard.
 
-## Cloud build
+The current ISO is an engineering prototype, not the finished LokiOS operating system. Do not describe it as a fully custom OS or as boot-tested on hardware.
 
-1. Open [GitHub Actions](https://github.com/yassino330/Loki-OS-2/actions).
-2. Select **Build LokiOS image** and open the latest run.
-3. Wait for all steps to pass.
-4. Download the `lokios-graphical-iso-x86_64` artifact.
+## Target architecture
 
-The output is `LokiOS-graphical-x86_64.iso`, retained by GitHub for 14 days.
+- Upstream Linux kernel and hardware drivers.
+- LokiOS-owned boot splash and boot flow.
+- LokiOS userspace, core utilities, init/service manager, and system configuration.
+- LokiOS login/session manager and desktop shell.
+- LokiOS graphical full-screen installer with language, keyboard, network, disk selection, progress, and restart stages.
+- LokiOS settings, file manager, terminal, app launcher, notifications, and system tools.
+- LokiOS branding throughout; no distro greeter, installer, desktop, or branding.
 
-## Included
+## Build pipeline
 
-- Upstream Linux 6.12.y with EFI, live filesystem, USB, NVMe, SATA, virtio and common PC driver configuration
-- Intel, AMD and Nouveau graphics modules; common Wi-Fi and Ethernet driver families
-- Debian Trixie live root filesystem, live-boot, GRUB and Zstandard SquashFS
-- Xorg, LightDM, Openbox, NetworkManager and firmware packages
-- Qt 6 Quick shell with launcher panels and basic app launching
+The current GitHub Actions pipeline builds a development ISO using the prototype implementation. It does not yet produce the target architecture above. The transition requires replacing the Debian root filesystem and its package/service assumptions, then validating the resulting ISO in a virtual machine before calling it usable.
 
-The kernel is based on upstream Linux; LokiOS does not claim to have a kernel written from scratch. Driver availability varies by hardware and firmware.
+## Kernel
 
-## Live account
-
-The image creates an auto-login desktop account named `loki`. It currently uses a temporary development password, `lokios`; change it before distributing the image.
-
-## Roadmap
-
-- [x] Qt Quick desktop scaffold and dock
-- [x] Cloud kernel and ISO build pipeline
-- [x] Broader graphics, network, storage and USB kernel configuration
-- [x] Explicit live desktop user and firmware repository setup
-- [ ] Verify successful build and boot-test ISO
-- [x] Initial UEFI disk installer with explicit disk-erasure confirmation\n- [ ] Real settings app, power management and hardware testing
+The kernel is based on upstream Linux. LokiOS does not claim to have written its own kernel. Driver and hardware support must be tested on target machines.
