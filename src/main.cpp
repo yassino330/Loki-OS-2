@@ -3,6 +3,8 @@
 #include <QQmlContext>
 #include <QProcess>
 #include <QStringList>
+#include <QVariantMap>
+#include <QRegularExpression>
 
 class SystemActions final : public QObject
 {
@@ -23,11 +25,36 @@ public:
         return QProcess::startDetached(program, {});
     }
 
-    Q_INVOKABLE bool launchInstaller()
+    Q_INVOKABLE QVariantList installDisks() const
     {
-        return QProcess::startDetached(QStringLiteral("xterm"), {QStringLiteral("-T"), QStringLiteral("Install LokiOS"), QStringLiteral("-e"), QStringLiteral("sudo"), QStringLiteral("/usr/local/sbin/lokios-install")});
+        QProcess process;
+        process.start(QStringLiteral("lsblk"), {QStringLiteral("-dnpo"), QStringLiteral("NAME,SIZE,MODEL,TYPE")});
+        if (!process.waitForFinished(3000) || process.exitCode() != 0)
+            return {};
+        QVariantList disks;
+        const auto lines = QString::fromUtf8(process.readAllStandardOutput()).split(QLatin1Char('\n'), Qt::SkipEmptyParts);
+        for (const QString &line : lines) {
+            const QStringList fields = line.simplified().split(QLatin1Char(' '));
+            if (fields.size() < 3 || fields.constLast() != QStringLiteral("disk"))
+                continue;
+            const QString device = fields.constFirst();
+            const QString size = fields.value(1);
+            const QString model = fields.mid(2, fields.size() - 3).join(QLatin1Char(' '));
+            disks.append(QVariantMap{{QStringLiteral("device"), device},
+                                     {QStringLiteral("label"), device + QStringLiteral("  •  ") + size + QStringLiteral("  •  ") + model}});
+        }
+        return disks;
     }
-};
+
+    Q_INVOKABLE bool launchInstaller(const QString &disk, const QString &confirmation)
+    {
+        if (!disk.startsWith(QStringLiteral("/dev/")) || confirmation.isEmpty())
+            return false;
+        return QProcess::startDetached(QStringLiteral("xterm"),
+            {QStringLiteral("-T"), QStringLiteral("Install LokiOS"),
+             QStringLiteral("-e"), QStringLiteral("sudo"),
+             QStringLiteral("/usr/local/sbin/lokios-install"), disk, confirmation});
+    }};
 
 int main(int argc, char *argv[])
 {
