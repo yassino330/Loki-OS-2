@@ -183,8 +183,11 @@ test -f "$ROOTFS/usr/share/xsessions/lokios.desktop"
 grep -q '^loki:[^:]*:[0-9][0-9]*:[0-9][0-9]*:' "$ROOTFS/etc/passwd"
 
 cat > "$ROOTFS/etc/initramfs-tools/modules" <<'MODULES'
-# Built-in live filesystem support is configured in the kernel; force-load
-# storage drivers so the live medium is discoverable on different hardware.
+# Include the keyboard modules in the initramfs so they are loaded before
+# LightDM starts, even when udev coldplug is delayed on unusual hardware.
+usbhid
+hid_generic
+virtio_input
 usb-storage
 sd_mod
 ahci
