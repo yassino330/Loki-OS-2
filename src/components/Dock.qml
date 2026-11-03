@@ -4,7 +4,7 @@ import QtQuick.Controls
 Item {
     id: root
 
-    implicitWidth: dock.implicitWidth
+    implicitWidth: row.implicitWidth + 28
     implicitHeight: 76
 
     GlassPanel {
