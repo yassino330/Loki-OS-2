@@ -2,6 +2,7 @@
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QProcess>
+#include <QUrl>
 #include <QStringList>
 #include <QVariantMap>
 
@@ -122,7 +123,7 @@ int main(int argc, char *argv[])
     SystemActions actions;
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty(QStringLiteral("SystemActions"), &actions);
-    engine.loadFromModule("LokiOS", "Main");
+    engine.load(QUrl(QStringLiteral("qrc:/qt/qml/LokiOS/src/Main.qml")));
 
     if (engine.rootObjects().isEmpty()) return -1;
     return app.exec();
