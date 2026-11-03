@@ -24,7 +24,7 @@ rm -rf "$ROOTFS" "$ISO_ROOT"
 mkdir -p "$ROOTFS" "$ISO_ROOT/live" "$ISO_ROOT/boot/grub"
 
 echo "Creating minimal Debian Trixie root filesystem..."
-debootstrap --merged-usr --arch=amd64 --variant=minbase --include=apt,ca-certificates,locales,usrmerge   trixie "$ROOTFS" "$ARCHIVE_MIRROR"
+debootstrap --merged-usr --arch=amd64 --variant=minbase --include=apt,ca-certificates,locales trixie "$ROOTFS" "$ARCHIVE_MIRROR"
 
 # Enable Debian's firmware component so real machines can load vendor firmware.
 cat > "$ROOTFS/etc/apt/sources.list" <<SOURCES
@@ -63,6 +63,12 @@ cleanup() {
 trap cleanup EXIT
 
 chroot "$ROOTFS" apt-get update
+# Trixie requires merged-/usr. Install the migration package explicitly before
+# systemd so the /bin, /sbin and /lib symlinks exist in the target rootfs.
+chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends usrmerge
+for path in bin sbin lib; do
+  [[ -L "$ROOTFS/$path" ]] || { echo "Expected merged-/usr symlink missing: /$path" >&2; exit 1; }
+done
 chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
   systemd-sysv initramfs-tools live-boot live-config lightdm lightdm-gtk-greeter \
   xserver-xorg-core xserver-xorg-input-libinput xserver-xorg-video-fbdev \
