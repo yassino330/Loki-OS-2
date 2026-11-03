@@ -71,7 +71,7 @@ for path in bin sbin lib; do
 done
 chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
   systemd-sysv initramfs-tools live-boot live-config plymouth plymouth-themes lightdm lightdm-gtk-greeter \
-  xserver-xorg xserver-xorg-input-libinput xserver-xorg-video-fbdev \
+  xserver-xorg xserver-xorg-input-libinput xserver-xorg-input-evdev xserver-xorg-video-fbdev \
   openbox dbus-x11 network-manager sudo locales pcmanfm xterm lxappearance \
   libgl1-mesa-dri \
   firmware-iwlwifi firmware-realtek firmware-atheros firmware-brcm80211 \
