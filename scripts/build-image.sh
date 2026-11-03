@@ -130,6 +130,7 @@ nvme
 MODULES
 
 # Use Debian's polished spinner Plymouth theme during kernel/initramfs startup.
+chroot "$ROOTFS" plymouth-set-default-theme spinner
 mkdir -p "$ROOTFS/etc/plymouth"
 cat > "$ROOTFS/etc/plymouth/plymouthd.conf" <<'PLYMOUTH'
 [Daemon]
