@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+SERIAL=/dev/ttyS0
+LOG_DIR=/tmp/lokios-keyboard-test
+emit() {
+  printf 'LOKIOS_VM_TEST:%s\n' "$1" > "$SERIAL"
+}
+serial_detail() {
+  printf 'LOKIOS_VM_TEST:%s\n' "$*" > "$SERIAL"
+}
+
+[[ -c "$SERIAL" ]] || exit 1
+
+ready=0
+for _ in $(seq 1 240); do
+  if systemctl is-active --quiet lightdm \
+      && pgrep -u loki -x lokios >/dev/null \
+      && [[ -S /tmp/.X11-unix/X0 ]] \
+      && id -nG loki | tr ' ' '\n' | grep -qx input \
+      && find /dev/input -maxdepth 1 -type c -name 'event*' -print -quit | grep -q .; then
+    ready=1
+    break
+  fi
+  sleep 1
+done
+
+if [[ "$ready" -ne 1 ]]; then
+  emit DESKTOP_FAIL
+  serial_detail "LIGHTDM=$(systemctl is-active lightdm || true)"
+  serial_detail "LOKI_PROCESS=$(pgrep -a -u loki lokios || true)"
+  serial_detail "INPUT_DEVICES=$(find /dev/input -maxdepth 1 -type c -name 'event*' -printf '%f ' 2>/dev/null || true)"
+  exit 1
+fi
+
+emit DESKTOP_READY
+mkdir -p "$LOG_DIR"
+rm -f "$LOG_DIR"/*.log
+count=0
+for dev in /dev/input/event*; do
+  [[ -c "$dev" ]] || continue
+  evtest "$dev" > "$LOG_DIR/$(basename "$dev").log" 2>&1 &
+  count=$((count + 1))
+done
+[[ "$count" -gt 0 ]] || { emit NO_INPUT_EVENTS; exit 1; }
+sleep 2
+emit KEYBOARD_LISTENING
+
+for _ in $(seq 1 30); do
+  if grep -Eq 'type 1 \(EV_KEY\), code 30 \(KEY_A\), value 1' "$LOG_DIR"/*.log; then
+    pkill -x evtest 2>/dev/null || true
+    emit KEYBOARD_KEY_A_RECEIVED
+    exit 0
+  fi
+  sleep 1
+done
+
+pkill -x evtest 2>/dev/null || true
+emit KEYBOARD_KEY_A_MISSING
+for file in "$LOG_DIR"/*.log; do
+  while IFS= read -r line; do serial_detail "$line"; done < "$file"
+done
+exit 1
