@@ -20,7 +20,7 @@ OVMF_VARS="${OVMF_CODE/OVMF_CODE/OVMF_VARS}"
 
 mkdir -p "$(dirname "$LOG")"
 TMP_DIR="$(mktemp -d)"
-MONITOR_SOCKET="$TMP_DIR/monitor.sock"
+QMP_SOCKET="$TMP_DIR/qmp.sock"
 SERIAL_LOG="$TMP_DIR/serial.log"
 DISK="$TMP_DIR/throwaway.qcow2"
 cp "$OVMF_VARS" "$TMP_DIR/OVMF_VARS.fd"
@@ -38,7 +38,7 @@ qemu-system-x86_64 \
   -cdrom "$ISO" -boot order=d \
   -device qemu-xhci -device usb-kbd -device usb-tablet \
   -vga std -display none -serial "file:$SERIAL_LOG" \
-  -monitor "unix:$MONITOR_SOCKET,server=on,wait=off" \
+  -qmp "unix:$QMP_SOCKET,server=on,wait=off" \
   -no-reboot -no-shutdown >"$TMP_DIR/qemu.stderr" 2>&1 &
 QEMU_PID=$!
 
@@ -50,7 +50,8 @@ cleanup() {
 trap cleanup EXIT
 
 set +e
-python3 - "$SERIAL_LOG" "$MONITOR_SOCKET" "$QEMU_PID" <<'PY' | tee -a "$LOG"
+python3 - "$SERIAL_LOG" "$QMP_SOCKET" "$QEMU_PID" <<'PY' | tee -a "$LOG"
+import json
 import os
 import socket
 import sys
@@ -97,18 +98,45 @@ wait_for("LOKIOS_VM_TEST:KEYBOARD_LISTENING",
          "LOKIOS_VM_TEST:NO_INPUT_EVENTS",
          20, "keyboard event listener")
 
-monitor = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-monitor.settimeout(2)
-monitor.connect(monitor_path)
+# Use QMP input-send-event so the virtual key reaches the guest explicitly.
+qmp = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+qmp.settimeout(10)
+qmp.connect(monitor_path)
+stream = qmp.makefile("rwb", buffering=0)
 try:
-    try:
-        monitor.recv(4096)
-    except socket.timeout:
-        pass
-    time.sleep(1)
-    monitor.sendall(b"sendkey a\n")
+    greeting = json.loads(stream.readline().decode())
+    if "QMP" not in greeting:
+        raise RuntimeError(f"Unexpected QMP greeting: {greeting}")
+
+    def qmp_call(request_id, command, arguments=None):
+        request = {"execute": command, "id": request_id}
+        if arguments is not None:
+            request["arguments"] = arguments
+        stream.write((json.dumps(request) + "\r\n").encode())
+        while True:
+            raw = stream.readline()
+            if not raw:
+                raise ConnectionError("QMP socket closed")
+            reply = json.loads(raw.decode())
+            if reply.get("id") != request_id:
+                continue
+            if "error" in reply:
+                raise RuntimeError(f"QMP {command} failed: {reply['error']}")
+            return reply.get("return")
+
+    qmp_call("capabilities", "qmp_capabilities")
+    event_down = {"events": [{"type": "key", "data": {
+        "down": True, "key": {"type": "qcode", "data": "a"}
+    }}]}
+    event_up = {"events": [{"type": "key", "data": {
+        "down": False, "key": {"type": "qcode", "data": "a"}
+    }}]}
+    qmp_call("key-down", "input-send-event", event_down)
+    time.sleep(0.6)
+    qmp_call("key-up", "input-send-event", event_up)
 finally:
-    monitor.close()
+    stream.close()
+    qmp.close()
 
 wait_for("LOKIOS_VM_TEST:KEYBOARD_KEY_A_RECEIVED",
          "LOKIOS_VM_TEST:KEYBOARD_KEY_A_MISSING",
