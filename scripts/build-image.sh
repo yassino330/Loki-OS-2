@@ -196,6 +196,12 @@ cat > "$ROOTFS/etc/initramfs-tools/modules" <<'MODULES'
 # LightDM starts, even when udev coldplug is delayed on unusual hardware.
 usbhid
 hid_generic
+xhci_pci
+xhci_hcd
+i2c_hid
+i2c_hid_acpi
+atkbd
+serio_raw
 virtio_input
 usb-storage
 sd_mod
@@ -267,6 +273,7 @@ COMPAT_KERNEL="$(find "$ROOTFS/boot" -maxdepth 1 -type f -name 'vmlinuz-*' | sor
 COMPAT_KERNEL_RELEASE="${COMPAT_KERNEL##*/vmlinuz-}"
 [[ "$COMPAT_KERNEL_RELEASE" != "$KERNEL_RELEASE" ]] || { echo "Compatibility kernel matches the LokiOS kernel unexpectedly." >&2; exit 1; }
 [[ -s "$ROOTFS/boot/initrd.img-$COMPAT_KERNEL_RELEASE" ]] || { echo "Compatibility kernel initramfs is missing." >&2; exit 1; }
+chroot "$ROOTFS" update-initramfs -u -k "$COMPAT_KERNEL_RELEASE"
 install -m 0644 "$COMPAT_KERNEL" "$ISO_ROOT/live/vmlinuz-$COMPAT_KERNEL_RELEASE"
 install -m 0644 "$ROOTFS/boot/initrd.img-$COMPAT_KERNEL_RELEASE" "$ISO_ROOT/live/initrd.img-$COMPAT_KERNEL_RELEASE"
 
