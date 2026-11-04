@@ -58,6 +58,10 @@ done
 pkill -x evtest 2>/dev/null || true
 emit KEYBOARD_KEY_A_MISSING
 for file in "$LOG_DIR"/*.log; do
-  while IFS= read -r line; do serial_detail "$line"; done < "$file"
+  [[ -s "$file" ]] || continue
+  serial_detail "EVTEST_LOG=$(basename "$file")"
+  grep -E 'Event: time|KEY_A|Input device name|EV_KEY' "$file" | tail -n 16 | while IFS= read -r line; do
+    serial_detail "$line"
+  done || true
 done
 exit 1
