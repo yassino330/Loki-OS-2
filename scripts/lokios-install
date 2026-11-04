@@ -8,14 +8,15 @@ fail() { printf '\nERROR: %s\n' "$*" >&2; exit 1; }
 for cmd in lsblk parted partprobe mkfs.vfat mkfs.ext4 blkid mount umount tar chroot udevadm findmnt blockdev; do
   command -v "$cmd" >/dev/null || fail "Missing command: $cmd"
 done
+KERNEL_RELEASE="$(uname -r)"
 LIVE_DIR=""
 for candidate in /run/live/medium/live /lib/live/mount/medium/live /live; do
-  if [[ -s "$candidate/vmlinuz" && -s "$candidate/initrd.img" ]]; then
+  if [[ -s "$candidate/vmlinuz-$KERNEL_RELEASE" && -s "$candidate/initrd.img-$KERNEL_RELEASE" ]]; then
     LIVE_DIR="$candidate"
     break
   fi
 done
-[[ -n "$LIVE_DIR" ]] || fail "Could not locate the booted LokiOS installation media."
+[[ -n "$LIVE_DIR" ]] || fail "Could not find the kernel and initramfs matching the running system ($KERNEL_RELEASE)."
 
 say "Available disks:"
 lsblk -dpno NAME,SIZE,MODEL,TYPE | awk '$4=="disk"'
@@ -87,13 +88,10 @@ mount --bind /dev/pts "$TARGET/dev/pts"
 mount -t proc proc "$TARGET/proc"
 mount -t sysfs sysfs "$TARGET/sys"
 mount --bind /run "$TARGET/run"
-chroot "$TARGET" apt-get update
-DEBIAN_FRONTEND=noninteractive chroot "$TARGET" apt-get install -y --no-install-recommends \
-  grub-efi-amd64 grub-efi-amd64-bin grub2-common efibootmgr
-KERNEL_RELEASE="$(find "$TARGET/lib/modules" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort -V | tail -n1)"
-[[ -n "$KERNEL_RELEASE" ]] || fail "No LokiOS kernel modules were found on the installed system."
-install -m 0644 "$LIVE_DIR/vmlinuz" "$TARGET/boot/vmlinuz-$KERNEL_RELEASE"
-install -m 0644 "$LIVE_DIR/initrd.img" "$TARGET/boot/initrd.img-$KERNEL_RELEASE"
+# The live image already includes GRUB and efibootmgr; installation is offline.
+[[ -d "$TARGET/lib/modules/$KERNEL_RELEASE" ]] || fail "The installed system is missing modules for the running kernel $KERNEL_RELEASE."
+install -m 0644 "$LIVE_DIR/vmlinuz-$KERNEL_RELEASE" "$TARGET/boot/vmlinuz-$KERNEL_RELEASE"
+install -m 0644 "$LIVE_DIR/initrd.img-$KERNEL_RELEASE" "$TARGET/boot/initrd.img-$KERNEL_RELEASE"
 cat > "$TARGET/etc/grub.d/09_lokios" <<GRUB
 #!/bin/sh
 exec tail -n +3 \$0
