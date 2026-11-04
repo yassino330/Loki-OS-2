@@ -37,13 +37,30 @@ emit DESKTOP_READY
 mkdir -p "$LOG_DIR"
 rm -f "$LOG_DIR"/*.log
 count=0
+keyboard_count=0
 for dev in /dev/input/event*; do
   [[ -c "$dev" ]] || continue
-  evtest "$dev" > "$LOG_DIR/$(basename "$dev").log" 2>&1 &
+  log="$LOG_DIR/$(basename "$dev").log"
+  evtest "$dev" > "$log" 2>&1 &
   count=$((count + 1))
+  # evtest prints the device capabilities at startup. A keyboard must expose
+  # KEY_A (Linux key code 30); a tablet or speaker alone is not a keyboard.
+  sleep 0.4
+  if grep -q 'Event code 30 (KEY_A)' "$log"; then
+    keyboard_count=$((keyboard_count + 1))
+    serial_detail "KEYBOARD_DEVICE=$(basename "$dev")"
+  fi
 done
 [[ "$count" -gt 0 ]] || { emit NO_INPUT_EVENTS; exit 1; }
-sleep 2
+[[ "$keyboard_count" -gt 0 ]] || {
+  emit NO_KEYBOARD_DEVICE
+  for file in "$LOG_DIR"/*.log; do
+    [[ -s "$file" ]] || continue
+    serial_detail "INPUT_DEVICE=$(basename "$file")"
+    grep 'Input device name:' "$file" | head -n 1 | while IFS= read -r line; do serial_detail "$line"; done || true
+  done
+  exit 1
+}
 emit KEYBOARD_LISTENING
 
 for _ in $(seq 1 30); do
