@@ -50,7 +50,7 @@ jobs:
           import re
           from pathlib import Path
           source = Path("scripts/test-boot-qemu.sh").read_text()
-          match = re.search(r"<<'PY'\\n(.*?)\\nPY\\n", source, re.S)
+          match = re.search(r"<<'PY'\n(.*?)\nPY\n", source, re.S)
           if not match:
               raise SystemExit("Could not find the embedded QEMU test program")
           compile(match.group(1), "scripts/test-boot-qemu.sh:<embedded-python>", "exec")
