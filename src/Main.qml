@@ -6,6 +6,7 @@ Window {
     id: root
     width: 1440
     height: 900
+    focus: true
     minimumWidth: 960
     minimumHeight: 640
     visible: true
@@ -18,6 +19,31 @@ Window {
     property bool installerOpen: false
     property bool quickOpen: false
     property string searchText: ""
+
+    Shortcut {
+        sequence: "Meta"
+        context: Qt.ApplicationShortcut
+        onActivated: root.activePanel = root.activePanel === "apps" ? "home" : "apps"
+    }
+    Shortcut {
+        sequence: "Ctrl+Alt+T"
+        context: Qt.ApplicationShortcut
+        onActivated: SystemActions.launch("xfce4-terminal")
+    }
+    Shortcut {
+        sequence: "Ctrl+Alt+F"
+        context: Qt.ApplicationShortcut
+        onActivated: SystemActions.launch("pcmanfm")
+    }
+    Shortcut {
+        sequence: "Escape"
+        context: Qt.ApplicationShortcut
+        onActivated: {
+            if (root.installerOpen) root.installerOpen = false
+            else if (root.quickOpen) root.quickOpen = false
+            else root.activePanel = "home"
+        }
+    }
 
     Rectangle {
         anchors.fill: parent
@@ -105,7 +131,7 @@ Window {
     // Start / application panel
     GlassPanel {
         id: appPanel
-        width: 500; height: 560
+        width: Math.min(740, parent.width - 48); height: 640
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: dock.top; anchors.bottomMargin: 16
         cornerRadius: 26; glassOpacity: 0.94
@@ -130,13 +156,20 @@ Window {
                 onTextChanged: root.searchText = text.toLowerCase()
             }
             Grid {
-                columns: 2; spacing: 12
+                columns: 3; spacing: 12
                 Repeater {
                     model: [
                         {name:"Browser", detail:"Browse the web", glyph:"◎", cmd:"browser"},
                         {name:"Terminal", detail:"Command line", glyph:"›_", cmd:"terminal"},
                         {name:"Files", detail:"Browse your folders", glyph:"▰", cmd:"files"},
+                        {name:"Text Editor", detail:"Write and edit files", glyph:"T", cmd:"editor"},
                         {name:"Appearance", detail:"Customize your desktop", glyph:"◐", cmd:"appearance"},
+                        {name:"Network", detail:"Wi-Fi and connections", glyph:"⌁", cmd:"network"},
+                        {name:"Sound", detail:"Audio devices and volume", glyph:"♫", cmd:"sound"},
+                        {name:"Bluetooth", detail:"Pair wireless devices", glyph:"ᛒ", cmd:"bluetooth"},
+                        {name:"Power", detail:"Battery and power options", glyph:"ϟ", cmd:"power"},
+                        {name:"System Monitor", detail:"Processes and memory", glyph:"▥", cmd:"monitor"},
+                        {name:"Screenshot", detail:"Capture your screen", glyph:"▧", cmd:"screenshot"},
                         {name:"Install LokiOS", detail:"Install to a computer", glyph:"⬇", cmd:"installer"}
                     ]
                     delegate: Rectangle {
@@ -159,9 +192,16 @@ Window {
                             id: mouse; anchors.fill: parent; hoverEnabled: true
                             onClicked: {
                                 if (modelData.cmd === "browser") SystemActions.launch("chromium")
-                                else if (modelData.cmd === "terminal") SystemActions.launch("xterm")
+                                else if (modelData.cmd === "terminal") SystemActions.launch("xfce4-terminal")
                                 else if (modelData.cmd === "files") SystemActions.launch("pcmanfm")
+                                else if (modelData.cmd === "editor") SystemActions.launch("mousepad")
                                 else if (modelData.cmd === "appearance") SystemActions.launch("lxappearance")
+                                else if (modelData.cmd === "network") SystemActions.launch("nm-connection-editor")
+                                else if (modelData.cmd === "sound") SystemActions.launch("pavucontrol")
+                                else if (modelData.cmd === "bluetooth") SystemActions.launch("blueman-manager")
+                                else if (modelData.cmd === "power") SystemActions.launch("xfce4-power-manager-settings")
+                                else if (modelData.cmd === "monitor") SystemActions.launch("xfce4-taskmanager")
+                                else if (modelData.cmd === "screenshot") SystemActions.launch("xfce4-screenshooter")
                                 else if (modelData.cmd === "installer") { root.installerOpen = true; root.activePanel = "home" }
                             }
                         }
@@ -174,16 +214,21 @@ Window {
 
     // Quick settings flyout
     GlassPanel {
-        width: 300; height: 210
+        width: 340; height: 290
         anchors.top: parent.top; anchors.right: parent.right
         anchors.topMargin: 84; anchors.rightMargin: 18
         cornerRadius: 20; glassOpacity: 0.96; visible: root.quickOpen
         Column {
-            anchors.fill: parent; anchors.margins: 20; spacing: 13
+            anchors.fill: parent; anchors.margins: 18; spacing: 9
             Label { text: "Quick settings"; color: "#f4f7ff"; font.pixelSize: 19; font.weight: Font.DemiBold }
-            Label { text: "Network"; color: "#b8c7db"; font.pixelSize: 13 }
-            Label { text: "Power and session"; color: "#b8c7db"; font.pixelSize: 13 }
-            Label { text: "LokiOS preview build"; color: "#71839d"; font.pixelSize: 11 }
+            Grid {
+                columns: 2; spacing: 8
+                Button { text: "Wi-Fi & Network"; onClicked: SystemActions.launch("nm-connection-editor") }
+                Button { text: "Sound"; onClicked: SystemActions.launch("pavucontrol") }
+                Button { text: "Bluetooth"; onClicked: SystemActions.launch("blueman-manager") }
+                Button { text: "Power"; onClicked: SystemActions.launch("xfce4-power-manager-settings") }
+            }
+            Label { text: "LokiOS • Chromium • Linux 6.12"; color: "#9eb6c9"; font.pixelSize: 11 }
         }
     }
 
