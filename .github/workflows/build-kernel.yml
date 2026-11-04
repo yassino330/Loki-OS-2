@@ -13,6 +13,7 @@ on:
       - "scripts/build-image.sh"
       - "scripts/lokios-install"
       - "scripts/test-boot-qemu.sh"
+      - "scripts/lokios-vm-health"
       - "src/**"
       - "os/**"
       - "docs/**"
@@ -43,7 +44,17 @@ jobs:
             qemu-system-x86 qemu-utils ovmf squashfs-tools tar xorriso xz-utils
 
       - name: Validate build and installer shell scripts
-        run: bash -n scripts/build-image.sh scripts/build-kernel.sh scripts/lokios-install scripts/test-boot-qemu.sh
+        run: |
+          bash -n scripts/build-image.sh scripts/build-kernel.sh scripts/lokios-install scripts/test-boot-qemu.sh scripts/lokios-vm-health
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          source = Path("scripts/test-boot-qemu.sh").read_text()
+          match = re.search(r"<<'PY'\\n(.*?)\\nPY\\n", source, re.S)
+          if not match:
+              raise SystemExit("Could not find the embedded QEMU test program")
+          compile(match.group(1), "scripts/test-boot-qemu.sh:<embedded-python>", "exec")
+          PY
 
       - name: Select the verified cached Linux kernel revision
         id: kernel-source
