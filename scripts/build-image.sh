@@ -72,7 +72,7 @@ done
 chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
   systemd-sysv initramfs-tools live-boot live-config plymouth plymouth-themes lightdm lightdm-gtk-greeter \
   evtest \
-  linux-image-amd64 qemu-guest-agent \
+  linux-image-amd64 \
   xserver-xorg xserver-xorg-input-libinput xserver-xorg-input-evdev xserver-xorg-video-fbdev \
   openbox dbus-x11 network-manager network-manager-gnome procps sudo locales pcmanfm xterm xfce4-terminal \
   lxappearance mousepad pavucontrol pipewire-audio wireplumber bluez blueman \
@@ -210,18 +210,25 @@ chroot "$ROOTFS" systemctl enable lightdm
 chroot "$ROOTFS" systemctl is-enabled lightdm >/dev/null
 chroot "$ROOTFS" systemctl enable NetworkManager
 chroot "$ROOTFS" systemctl enable bluetooth
-mkdir -p "$ROOTFS/etc/systemd/system/qemu-guest-agent.service.d"
-cat > "$ROOTFS/etc/systemd/system/qemu-guest-agent.service.d/10-lokios-virtio-only.conf" <<'QGA'
+
+# Only QEMU guests run this serial health check. It confirms the real LightDM
+# desktop and waits for an injected keyboard event; physical PCs skip it.
+install -D -m 0755 "$ROOT_DIR/scripts/lokios-vm-health" "$ROOTFS/usr/local/sbin/lokios-vm-health"
+cat > "$ROOTFS/etc/systemd/system/lokios-vm-health.service" <<'VMHEALTH'
 [Unit]
-ConditionPathExists=/dev/virtio-ports/org.qemu.guest_agent.0
-QGA
-# Debian ships the guest agent as a device-bound service. Link it into
-# multi-user.target; its BindsTo/After dependency keeps it inactive on PCs
-# without the QEMU virtio-serial port.
-test -f "$ROOTFS/usr/lib/systemd/system/qemu-guest-agent.service"
-mkdir -p "$ROOTFS/etc/systemd/system/multi-user.target.wants"
-ln -sf /usr/lib/systemd/system/qemu-guest-agent.service \
-  "$ROOTFS/etc/systemd/system/multi-user.target.wants/qemu-guest-agent.service"
+Description=LokiOS virtual-machine desktop and keyboard validation
+ConditionVirtualization=qemu
+After=lightdm.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/lokios-vm-health
+TimeoutStartSec=300
+
+[Install]
+WantedBy=graphical.target
+VMHEALTH
+chroot "$ROOTFS" systemctl enable lokios-vm-health.service
 chroot "$ROOTFS" plymouth-set-default-theme spinner
 mkdir -p "$ROOTFS/etc/plymouth"
 cat > "$ROOTFS/etc/plymouth/plymouthd.conf" <<'PLYMOUTH'
