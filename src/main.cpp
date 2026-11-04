@@ -22,7 +22,11 @@ public:
     {
         static const QStringList allowed{
             QStringLiteral("pcmanfm"), QStringLiteral("xterm"),
-            QStringLiteral("lxappearance"), QStringLiteral("xfce4-terminal"), QStringLiteral("chromium")
+            QStringLiteral("lxappearance"), QStringLiteral("xfce4-terminal"),
+            QStringLiteral("chromium"), QStringLiteral("mousepad"),
+            QStringLiteral("nm-connection-editor"), QStringLiteral("pavucontrol"),
+            QStringLiteral("blueman-manager"), QStringLiteral("xfce4-power-manager-settings"),
+            QStringLiteral("xfce4-taskmanager"), QStringLiteral("xfce4-screenshooter")
         };
         if (!allowed.contains(program)) return false;
         return QProcess::startDetached(program, {});
