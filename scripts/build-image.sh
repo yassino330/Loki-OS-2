@@ -214,7 +214,13 @@ cat > "$ROOTFS/etc/systemd/system/qemu-guest-agent.service.d/10-lokios-virtio-on
 [Unit]
 ConditionPathExists=/dev/virtio-ports/org.qemu.guest_agent.0
 QGA
-chroot "$ROOTFS" systemctl enable qemu-guest-agent
+# Debian ships the guest agent as a device-bound service. Link it into
+# multi-user.target; its BindsTo/After dependency keeps it inactive on PCs
+# without the QEMU virtio-serial port.
+test -f "$ROOTFS/usr/lib/systemd/system/qemu-guest-agent.service"
+mkdir -p "$ROOTFS/etc/systemd/system/multi-user.target.wants"
+ln -sf /usr/lib/systemd/system/qemu-guest-agent.service \
+  "$ROOTFS/etc/systemd/system/multi-user.target.wants/qemu-guest-agent.service"
 chroot "$ROOTFS" plymouth-set-default-theme spinner
 mkdir -p "$ROOTFS/etc/plymouth"
 cat > "$ROOTFS/etc/plymouth/plymouthd.conf" <<'PLYMOUTH'
