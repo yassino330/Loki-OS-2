@@ -48,6 +48,8 @@ jobs:
           bash -n scripts/build-image.sh scripts/build-kernel.sh scripts/lokios-install scripts/test-boot-qemu.sh scripts/lokios-vm-health
           test -f scripts/test-boot-qemu.sh
           test -f scripts/lokios-vm-health
+          qemu-system-x86_64 -device help 2>&1 | grep -q 'usb-kbd'
+          qemu-system-x86_64 -device help 2>&1 | grep -q 'virtio-keyboard-pci'
 
       - name: Select the verified cached Linux kernel revision
         id: kernel-source
