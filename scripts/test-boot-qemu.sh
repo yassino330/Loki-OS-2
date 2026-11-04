@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-ISO="\${1:-out/LokiOS-graphical-x86_64.iso}"
-LOG="\${2:-out/qemu-uefi-boot.log}"
+ISO="${1:-out/LokiOS-graphical-x86_64.iso}"
+LOG="${2:-out/qemu-uefi-boot.log}"
 [[ -s "$ISO" ]] || { echo "ISO not found: $ISO" >&2; exit 2; }
 command -v qemu-system-x86_64 >/dev/null || { echo "qemu-system-x86_64 is required." >&2; exit 2; }
 command -v qemu-img >/dev/null || { echo "qemu-img is required." >&2; exit 2; }
@@ -15,7 +15,7 @@ for candidate in \
   if [[ -s "$candidate" ]]; then OVMF_CODE="$candidate"; break; fi
 done
 [[ -n "$OVMF_CODE" ]] || { echo "OVMF UEFI firmware was not found." >&2; exit 2; }
-OVMF_VARS="\${OVMF_CODE/OVMF_CODE/OVMF_VARS}"
+OVMF_VARS="${OVMF_CODE/OVMF_CODE/OVMF_VARS}"
 [[ -s "$OVMF_VARS" ]] || { echo "Matching OVMF variables template was not found: $OVMF_VARS" >&2; exit 2; }
 
 mkdir -p "$(dirname "$LOG")"
