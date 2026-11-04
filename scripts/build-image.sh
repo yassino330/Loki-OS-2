@@ -71,12 +71,15 @@ for path in bin sbin lib; do
 done
 chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
   systemd-sysv initramfs-tools live-boot live-config plymouth plymouth-themes lightdm lightdm-gtk-greeter \
+  linux-image-amd64 qemu-guest-agent \
   xserver-xorg xserver-xorg-input-libinput xserver-xorg-input-evdev xserver-xorg-video-fbdev \
-  openbox dbus-x11 network-manager sudo locales pcmanfm xterm lxappearance \
+  openbox dbus-x11 network-manager network-manager-gnome sudo locales pcmanfm xterm xfce4-terminal \
+  lxappearance mousepad pavucontrol pipewire-audio wireplumber bluez blueman \
+  xfce4-power-manager xfce4-taskmanager xfce4-screenshooter polkitd mate-polkit \
   libgl1-mesa-dri \
   firmware-iwlwifi firmware-realtek firmware-atheros firmware-brcm80211 \
   firmware-mediatek intel-microcode amd64-microcode \
-  fonts-dejavu-core x11-xserver-utils chromium \
+  fonts-dejavu-core fonts-liberation2 fonts-noto-core fonts-noto-color-emoji x11-xserver-utils chromium \
   parted dosfstools grub-efi-amd64 grub2-common efibootmgr \
   qt6-qpa-plugins qml6-module-qtquick qml6-module-qtquick-controls \
   qml6-module-qtquick-window qml6-module-qtquick-templates \
@@ -90,16 +93,23 @@ install -D -m 0755 "$ROOTFS/tmp/lokios-build/lokios" "$ROOTFS/usr/local/bin/loki
 install -D -m 0755 "$ROOT_DIR/scripts/lokios-install" "$ROOTFS/usr/local/sbin/lokios-install"
 rm -rf "$ROOTFS/usr/src/lokios" "$ROOTFS/tmp/lokios-build"
 
-# A successful compile is not enough: launch the actual desktop with a virtual
-# X server and fail the image build if its QML engine or platform plugin fails.
-echo "Smoke-testing the LokiOS desktop under Xvfb..."
+
+# Create the live account explicitly; do not depend on live-config defaults.
+chroot "$ROOTFS" useradd --create-home --shell /bin/bash --groups audio,video,input,plugdev,netdev,sudo loki
+chroot "$ROOTFS" passwd -d loki
+chroot "$ROOTFS" passwd -l root
+
+# Run the QML launch test as the real, unprivileged desktop account.
+chroot "$ROOTFS" install -d -o loki -g loki -m 0700 /tmp/lokios-test-runtime
+echo "Smoke-testing LokiOS as the live user under Xvfb..."
 set +e
-chroot "$ROOTFS" xvfb-run -a timeout --signal=TERM --kill-after=2s 12s \
-  /usr/local/bin/lokios > "$OUTPUT_DIR/lokios-ui-smoke.log" 2>&1
+chroot "$ROOTFS" runuser -u loki -- env HOME=/home/loki XDG_RUNTIME_DIR=/tmp/lokios-test-runtime \
+  xvfb-run -a timeout --signal=TERM --kill-after=2s 12s /usr/local/bin/lokios \
+  > "$OUTPUT_DIR/lokios-ui-smoke.log" 2>&1
 UI_STATUS=$?
 set -e
 if [[ $UI_STATUS -ne 124 && $UI_STATUS -ne 137 ]]; then
-  echo "LokiOS desktop did not remain running during the UI smoke test (exit $UI_STATUS)." >&2
+  echo "LokiOS desktop did not remain running as loki (exit $UI_STATUS)." >&2
   cat "$OUTPUT_DIR/lokios-ui-smoke.log" >&2
   exit 1
 fi
@@ -108,11 +118,6 @@ if grep -Eiq 'QQmlApplicationEngine failed to load component|module .* is not in
   cat "$OUTPUT_DIR/lokios-ui-smoke.log" >&2
   exit 1
 fi
-
-# Create the live account explicitly; do not depend on live-config defaults.
-chroot "$ROOTFS" useradd --create-home --shell /bin/bash --groups audio,video,input,plugdev,netdev,sudo loki
-chroot "$ROOTFS" passwd -d loki
-chroot "$ROOTFS" passwd -l root
 
 # Passwordless local desktop: LightDM logs the live user in automatically, and
 # administrative actions launched from the desktop do not prompt for a password.
@@ -127,6 +132,9 @@ cat > "$ROOTFS/usr/local/bin/lokios-session" <<'SESSION'
 export XDG_SESSION_TYPE=x11
 export QT_QPA_PLATFORM=xcb
 openbox-session &
+nm-applet --indicator >/dev/null 2>&1 &
+blueman-applet >/dev/null 2>&1 &
+xfce4-power-manager >/dev/null 2>&1 &
 exec /usr/local/bin/lokios
 SESSION
 chmod 0755 "$ROOTFS/usr/local/bin/lokios-session"
@@ -199,6 +207,14 @@ MODULES
 chroot "$ROOTFS" systemctl set-default graphical.target
 chroot "$ROOTFS" systemctl enable lightdm
 chroot "$ROOTFS" systemctl is-enabled lightdm >/dev/null
+chroot "$ROOTFS" systemctl enable NetworkManager
+chroot "$ROOTFS" systemctl enable bluetooth
+mkdir -p "$ROOTFS/etc/systemd/system/qemu-guest-agent.service.d"
+cat > "$ROOTFS/etc/systemd/system/qemu-guest-agent.service.d/10-lokios-virtio-only.conf" <<'QGA'
+[Unit]
+ConditionPathExists=/dev/virtio-ports/org.qemu.guest_agent.0
+QGA
+chroot "$ROOTFS" systemctl enable qemu-guest-agent
 chroot "$ROOTFS" plymouth-set-default-theme spinner
 mkdir -p "$ROOTFS/etc/plymouth"
 cat > "$ROOTFS/etc/plymouth/plymouthd.conf" <<'PLYMOUTH'
@@ -225,10 +241,20 @@ chroot "$ROOTFS" apt-get autoremove -y
 chroot "$ROOTFS" apt-get clean
 rm -rf "$ROOTFS/var/lib/apt/lists/"*
 
-# Include modules needed to mount the compressed live root early.
+# Build and package the LokiOS upstream kernel.
 chroot "$ROOTFS" update-initramfs -c -k "$KERNEL_RELEASE"
-install -m 0644 "$KERNEL_DIR/bzImage" "$ISO_ROOT/live/vmlinuz"
-install -m 0644 "$ROOTFS/boot/initrd.img-$KERNEL_RELEASE" "$ISO_ROOT/live/initrd.img"
+install -m 0644 "$KERNEL_DIR/bzImage" "$ISO_ROOT/live/vmlinuz-$KERNEL_RELEASE"
+install -m 0644 "$ROOTFS/boot/initrd.img-$KERNEL_RELEASE" "$ISO_ROOT/live/initrd.img-$KERNEL_RELEASE"
+
+# Ship Debian's hardware-compatibility kernel as a fallback for laptops and
+# devices that need drivers outside the compact upstream LokiOS config.
+COMPAT_KERNEL="$(find "$ROOTFS/boot" -maxdepth 1 -type f -name 'vmlinuz-*' | sort -V | tail -n1)"
+[[ -s "$COMPAT_KERNEL" ]] || { echo "Compatibility kernel was not installed." >&2; exit 1; }
+COMPAT_KERNEL_RELEASE="${COMPAT_KERNEL##*/vmlinuz-}"
+[[ "$COMPAT_KERNEL_RELEASE" != "$KERNEL_RELEASE" ]] || { echo "Compatibility kernel matches the LokiOS kernel unexpectedly." >&2; exit 1; }
+[[ -s "$ROOTFS/boot/initrd.img-$COMPAT_KERNEL_RELEASE" ]] || { echo "Compatibility kernel initramfs is missing." >&2; exit 1; }
+install -m 0644 "$COMPAT_KERNEL" "$ISO_ROOT/live/vmlinuz-$COMPAT_KERNEL_RELEASE"
+install -m 0644 "$ROOTFS/boot/initrd.img-$COMPAT_KERNEL_RELEASE" "$ISO_ROOT/live/initrd.img-$COMPAT_KERNEL_RELEASE"
 
 # Never package the host's live pseudo-filesystems into the SquashFS image.
 # Unmount in reverse order before measuring or compressing the target root.
@@ -239,16 +265,20 @@ echo "Compressing the trimmed Debian userspace with high-ratio XZ..."
 du -shx "$ROOTFS"
 mksquashfs "$ROOTFS" "$ISO_ROOT/live/filesystem.squashfs" -comp xz -Xdict-size 100% -b 1M -noappend
 
-cat > "$ISO_ROOT/boot/grub/grub.cfg" <<'GRUB'
-set timeout=5
+cat > "$ISO_ROOT/boot/grub/grub.cfg" <<GRUB
+set timeout=4
 set default=0
 
-menuentry "LokiOS — Graphical Live Desktop" {
-    linux /live/vmlinuz boot=live components quiet splash hostname=lokios
-    initrd /live/initrd.img
+menuentry "LokiOS — Recommended hardware compatibility" {
+    linux /live/vmlinuz-$COMPAT_KERNEL_RELEASE boot=live components quiet splash hostname=lokios
+    initrd /live/initrd.img-$COMPAT_KERNEL_RELEASE
+}
+
+menuentry "LokiOS — Upstream Loki kernel" {
+    linux /live/vmlinuz-$KERNEL_RELEASE boot=live components quiet splash hostname=lokios
+    initrd /live/initrd.img-$KERNEL_RELEASE
 }
 GRUB
-
 grub-mkrescue -o "$OUTPUT_DIR/LokiOS-graphical-x86_64.iso" "$ISO_ROOT"
 test -s "$OUTPUT_DIR/LokiOS-graphical-x86_64.iso"
 echo "Created $OUTPUT_DIR/LokiOS-graphical-x86_64.iso"
