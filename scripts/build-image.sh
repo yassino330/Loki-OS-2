@@ -73,7 +73,7 @@ chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-inst
   systemd-sysv initramfs-tools live-boot live-config plymouth plymouth-themes lightdm lightdm-gtk-greeter \
   linux-image-amd64 qemu-guest-agent \
   xserver-xorg xserver-xorg-input-libinput xserver-xorg-input-evdev xserver-xorg-video-fbdev \
-  openbox dbus-x11 network-manager network-manager-gnome sudo locales pcmanfm xterm xfce4-terminal \
+  openbox dbus-x11 network-manager network-manager-gnome procps sudo locales pcmanfm xterm xfce4-terminal \
   lxappearance mousepad pavucontrol pipewire-audio wireplumber bluez blueman \
   xfce4-power-manager xfce4-taskmanager xfce4-screenshooter polkitd mate-polkit \
   libgl1-mesa-dri \
