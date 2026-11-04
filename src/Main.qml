@@ -189,8 +189,12 @@ Window {
                             }
                         }
                         MouseArea {
-                            id: mouse; anchors.fill: parent; hoverEnabled: true
-                            onClicked: {
+                            id: mouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            focus: true
+                            activeFocusOnTab: true
+                            function activateApp() {
                                 if (modelData.cmd === "browser") SystemActions.launch("chromium")
                                 else if (modelData.cmd === "terminal") SystemActions.launch("xfce4-terminal")
                                 else if (modelData.cmd === "files") SystemActions.launch("pcmanfm")
@@ -204,6 +208,9 @@ Window {
                                 else if (modelData.cmd === "screenshot") SystemActions.launch("xfce4-screenshooter")
                                 else if (modelData.cmd === "installer") { root.installerOpen = true; root.activePanel = "home" }
                             }
+                            onClicked: activateApp()
+                            Keys.onReturnPressed: activateApp()
+                            Keys.onSpacePressed: activateApp()
                         }
                     }
                 }
