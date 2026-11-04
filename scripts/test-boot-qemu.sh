@@ -22,6 +22,7 @@ mkdir -p "$(dirname "$LOG")"
 TMP_DIR="$(mktemp -d)"
 QGA_SOCKET="$TMP_DIR/qga.sock"
 SERIAL_LOG="$TMP_DIR/serial.log"
+MONITOR_SOCKET="$TMP_DIR/monitor.sock"
 DISK="$TMP_DIR/throwaway.qcow2"
 cp "$OVMF_VARS" "$TMP_DIR/OVMF_VARS.fd"
 qemu-img create -q -f qcow2 "$DISK" 16G
@@ -41,7 +42,7 @@ qemu-system-x86_64 \
   -chardev "socket,id=qga,path=$QGA_SOCKET,server=on,wait=off" \
   -device virtserialport,chardev=qga,name=org.qemu.guest_agent.0 \
   -vga std -display none -serial "file:$SERIAL_LOG" \
-  -monitor none -no-reboot -no-shutdown \
+  -monitor "unix:$MONITOR_SOCKET,server=on,wait=off" -no-reboot -no-shutdown \
   >"$TMP_DIR/qemu.stderr" 2>&1 &
 QEMU_PID=$!
 
@@ -148,6 +149,67 @@ exit 1
         time.sleep(2)
     else:
         raise TimeoutError("LokiOS did not reach its graphical desktop/input-ready state within the test window")
+
+    # Read input events from all Linux event devices. The host injects a real
+    # A key press through QEMU's monitor; success requires an EV_KEY value=1.
+    key_check = r"""
+set -eu
+DIR=/tmp/lokios-keyboard-test
+mkdir -p "$DIR"
+rm -f "$DIR"/*.log
+found=0
+for dev in /dev/input/event*; do
+  [ -c "$dev" ] || continue
+  evtest "$dev" > "$DIR/$(basename "$dev").log" 2>&1 &
+  found=1
+done
+[ "$found" -eq 1 ] || { echo "No input event devices available"; exit 2; }
+sleep 10
+pkill -x evtest || true
+sleep 1
+if grep -Eq 'type 1 \(EV_KEY\), code 30 \(KEY_A\), value 1' "$DIR"/*.log; then
+  echo LOKIOS_KEYBOARD_KEY_A_RECEIVED
+  exit 0
+fi
+echo "No KEY_A press event was received. evtest output follows:"
+cat "$DIR"/*.log || true
+exit 1
+"""
+    key_started = call(sock, stream, "guest-exec", {
+        "path": "/bin/bash",
+        "arg": ["-lc", key_check],
+        "capture-output": True
+    })
+    monitor = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    monitor.settimeout(2)
+    monitor.connect(os.path.join(os.path.dirname(path), "monitor.sock"))
+    try:
+        try:
+            monitor.recv(4096)
+        except socket.timeout:
+            pass
+        time.sleep(2)
+        monitor.sendall(b"sendkey a\n")
+    finally:
+        monitor.close()
+
+    key_pid = key_started["pid"]
+    key_deadline = time.monotonic() + 20
+    while time.monotonic() < key_deadline:
+        key_status = call(sock, stream, "guest-exec-status", {"pid": key_pid})
+        if key_status.get("exited"):
+            key_stdout = base64.b64decode(key_status.get("out-data", "")).decode(errors="replace")
+            key_stderr = base64.b64decode(key_status.get("err-data", "")).decode(errors="replace")
+            if key_stdout:
+                print(key_stdout, end="")
+            if key_stderr:
+                print(key_stderr, end="", file=sys.stderr)
+            if key_status.get("exitcode") != 0:
+                raise RuntimeError(f"Keyboard event test failed (exit {key_status.get('exitcode')})")
+            break
+        time.sleep(1)
+    else:
+        raise TimeoutError("Keyboard event test did not complete")
 finally:
     sock.close()
 PY
