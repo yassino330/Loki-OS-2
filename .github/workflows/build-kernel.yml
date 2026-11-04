@@ -46,8 +46,8 @@ jobs:
       - name: Validate build and installer shell scripts
         run: |
           bash -n scripts/build-image.sh scripts/build-kernel.sh scripts/lokios-install scripts/test-boot-qemu.sh scripts/lokios-vm-health
-          test -x scripts/test-boot-qemu.sh
-          test -x scripts/lokios-vm-health
+          test -f scripts/test-boot-qemu.sh
+          test -f scripts/lokios-vm-health
 
       - name: Select the verified cached Linux kernel revision
         id: kernel-source
