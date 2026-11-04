@@ -4,13 +4,13 @@ LokiOS is an independent Linux-based desktop operating-system project. It uses t
 
 ## Current repository status
 
-The current ISO pipeline builds a Debian Trixie-based live prototype with a LokiOS Qt desktop shell, Chromium, and a graphical disk-installation front end. It currently relies on Debian packages, systemd, live-boot, GRUB, Xorg, LightDM, and Openbox. It is a working build artifact, **not yet a fully independent distribution or a hardware-validated installer**.
+The current ISO pipeline builds a Debian Trixie-based live system with a LokiOS Qt desktop shell, Chromium, a hardware-compatibility kernel alongside the LokiOS upstream kernel, and an experimental UEFI installer. It currently relies on Debian packages, systemd, live-boot, GRUB, Xorg, LightDM, and Openbox. It is **not yet a fully independent distribution or validated for general physical-hardware installation**.
 
-The latest successful CI build produced the `lokios-graphical-iso-x86_64` artifact. A successful build confirms the ISO was generated; it does not prove it boots correctly on every computer or that installation is safe for daily use.
+CI now checks the desktop as the unprivileged `loki` user and runs a UEFI QEMU boot test that checks LightDM autologin, the LokiOS process, the X display socket, and input-device nodes. These are useful automated checks, but they do not prove compatibility with every physical laptop or validate a full disk installation.
 
 ## Project priorities
 
-- Polish the LokiOS desktop shell, app launcher, dock, quick settings, and settings experience.
+- Polish the LokiOS desktop shell, keyboard-driven app launcher, dock, quick settings, and settings experience.
 - Build a proper full-screen, Windows-style installer with language, keyboard, network, disk selection, progress, and restart stages.
 - Keep destructive disk operations explicit and guarded.
 - Improve boot branding, reliability, and hardware compatibility.
