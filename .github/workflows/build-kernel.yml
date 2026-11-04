@@ -12,6 +12,7 @@ on:
       - "scripts/build-kernel.sh"
       - "scripts/build-image.sh"
       - "scripts/lokios-install"
+      - "scripts/test-boot-qemu.sh"
       - "src/**"
       - "os/**"
       - "docs/**"
@@ -39,7 +40,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y bc bison build-essential ccache cpio debootstrap flex git \
             grub-common grub-efi-amd64-bin grub-pc-bin libelf-dev libssl-dev make mtools perl python3 \
-            squashfs-tools tar xorriso xz-utils
+            qemu-system-x86 qemu-utils ovmf squashfs-tools tar xorriso xz-utils
+
+      - name: Validate build and installer shell scripts
+        run: bash -n scripts/build-image.sh scripts/build-kernel.sh scripts/lokios-install scripts/test-boot-qemu.sh
 
       - name: Select the verified cached Linux kernel revision
         id: kernel-source
@@ -109,6 +113,9 @@ jobs:
           test "$ISO_BYTES" -lt 1073741824 || { echo "ISO exceeds the 1 GiB target."; exit 1; }
           sha256sum out/LokiOS-graphical-x86_64.iso > out/LokiOS-graphical-x86_64.iso.sha256
 
+      - name: Boot LokiOS in a UEFI virtual machine
+        run: bash scripts/test-boot-qemu.sh out/LokiOS-graphical-x86_64.iso out/qemu-uefi-boot.log
+
       - name: Upload LokiOS ISO artifact
         uses: actions/upload-artifact@v4
         with:
@@ -141,5 +148,6 @@ jobs:
             out/kernel/kernel-release.txt
             out/lokios-ui-smoke.log
             out/lightdm-effective.conf
+            out/qemu-uefi-boot.log
           if-no-files-found: ignore
           retention-days: 7
