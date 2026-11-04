@@ -36,7 +36,10 @@ qemu-system-x86_64 \
   -drive "if=pflash,format=raw,file=$TMP_DIR/OVMF_VARS.fd" \
   -drive "file=$DISK,if=virtio,format=qcow2" \
   -cdrom "$ISO" -boot order=d \
-  -device qemu-xhci -device usb-kbd -device usb-tablet \
+  -device qemu-xhci,id=xhci \
+  -device usb-kbd,id=usb-keyboard,bus=xhci.0 \
+  -device usb-tablet,id=usb-tablet,bus=xhci.0 \
+  -device virtio-keyboard-pci,id=virtio-keyboard \
   -vga std -display none -serial "file:$SERIAL_LOG" \
   -qmp "unix:$QMP_SOCKET,server=on,wait=off" \
   -no-reboot -no-shutdown >"$TMP_DIR/qemu.stderr" 2>&1 &
@@ -78,7 +81,8 @@ def wait_for(marker, failure_marker, seconds, description):
     while time.monotonic() < deadline:
         ensure_qemu_alive()
         output = serial_text()
-        if failure_marker and failure_marker in output:
+        failures = failure_marker if isinstance(failure_marker, (list, tuple)) else [failure_marker]
+        if any(marker and marker in output for marker in failures):
             raise RuntimeError(f"{description} failed. Serial output:\n{output[-9000:]}")
         if marker in output:
             print(f"PASS: {description}")
@@ -95,7 +99,7 @@ wait_for("LOKIOS_VM_TEST:DESKTOP_READY",
 
 # The guest health service has now started evtest on all input event nodes.
 wait_for("LOKIOS_VM_TEST:KEYBOARD_LISTENING",
-         "LOKIOS_VM_TEST:NO_INPUT_EVENTS",
+         ["LOKIOS_VM_TEST:NO_INPUT_EVENTS", "LOKIOS_VM_TEST:NO_KEYBOARD_DEVICE"],
          20, "keyboard event listener")
 
 # Use QMP input-send-event so the virtual key reaches the guest explicitly.
@@ -125,6 +129,11 @@ try:
             return reply.get("return")
 
     qmp_call("capabilities", "qmp_capabilities")
+    # Record which input devices QEMU actually attached before injecting a key.
+    usb_info = qmp_call("usb-info", "human-monitor-command", {"command-line": "info usb"})
+    print("QEMU_USB_DEVICES: " + str(usb_info))
+    pci_info = qmp_call("pci-info", "query-pci")
+    print("QEMU_PCI_DEVICES: " + json.dumps(pci_info)[:6000])
     event_down = {"events": [{"type": "key", "data": {
         "down": True, "key": {"type": "qcode", "data": "a"}
     }}]}
