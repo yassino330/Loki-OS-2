@@ -217,7 +217,7 @@ install -D -m 0755 "$ROOT_DIR/scripts/lokios-vm-health" "$ROOTFS/usr/local/sbin/
 cat > "$ROOTFS/etc/systemd/system/lokios-vm-health.service" <<'VMHEALTH'
 [Unit]
 Description=LokiOS virtual-machine desktop and keyboard validation
-ConditionVirtualization=qemu
+ConditionVirtualization=vm
 After=lightdm.service
 
 [Service]
