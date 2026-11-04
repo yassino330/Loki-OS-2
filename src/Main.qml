@@ -6,7 +6,6 @@ Window {
     id: root
     width: 1440
     height: 900
-    focus: true
     minimumWidth: 960
     minimumHeight: 640
     visible: true
