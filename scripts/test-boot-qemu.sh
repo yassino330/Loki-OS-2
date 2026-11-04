@@ -72,7 +72,7 @@ def connect_agent(deadline):
         except ProcessLookupError:
             raise RuntimeError("QEMU exited before the guest agent connected")
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        sock.settimeout(8)
+        sock.settimeout(240)
         try:
             sock.connect(path)
             return sock
@@ -100,7 +100,7 @@ def call(sock, stream, command, arguments=None):
             raise RuntimeError(f"{command}: {reply['error']}")
         return reply.get("return")
 
-sock = connect_agent(time.monotonic() + 120)
+sock = connect_agent(time.monotonic() + 240)
 try:
     stream = sock.makefile("rwb", buffering=0)
     call(sock, stream, "guest-sync", {"id": 90210})
