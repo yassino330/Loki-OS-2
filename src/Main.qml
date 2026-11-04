@@ -384,6 +384,7 @@ Window {
                 }
                 Button {
                     anchors.horizontalCenter: parent.horizontalCenter
+                    focus: true
                     text: "Get started"; onClicked: root.welcomeVisible = false
                     contentItem: Label { text: parent.text; color: "#102033"; font.weight: Font.DemiBold; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
                     background: Rectangle { radius: 13; color: "#b9d9ff" }
