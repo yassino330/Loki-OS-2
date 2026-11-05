@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+trap 'rc=$?; printf "\\nERROR: Installer command failed at line %s (exit %s): %s\\n" "$LINENO" "$rc" "$BASH_COMMAND" >&2' ERR
+
 say() { printf '\n\033[1;36mLokiOS Installer\033[0m  %s\n' "$*"; }
 fail() { printf '\nERROR: %s\n' "$*" >&2; exit 1; }
 [[ $EUID -eq 0 ]] || fail "Run this installer with sudo."
@@ -43,7 +45,9 @@ if [[ -z "$CONFIRM" ]]; then
 fi
 [[ "$CONFIRM" == "ERASE $(basename "$DISK")" ]] || fail "Confirmation did not match. Nothing was changed."
 
-PARTITION_TABLE="$(parted -s "$DISK" print 2>/dev/null | awk -F': ' '/Partition Table:/ {print $2; exit}')"
+# A blank disk makes "parted print" exit non-zero. Treat that as an empty
+# partition table instead of letting set -e abort before creating GPT.
+PARTITION_TABLE="$(parted -s "$DISK" print 2>/dev/null | awk -F': ' '/Partition Table:/ {print $2; exit}' || true)"
 case "$PARTITION_TABLE" in
   msdos)
     say "MBR partition table detected. Converting the selected disk to a fresh GPT layout (all old partitions will be erased)..."
