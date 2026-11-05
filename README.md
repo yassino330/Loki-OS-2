@@ -13,6 +13,8 @@ CI now checks the desktop as the unprivileged `loki` user and runs a UEFI QEMU b
 - Polish the LokiOS desktop shell, keyboard-driven app launcher, dock, quick settings, and settings experience.
 - Build a proper full-screen, Windows-style installer with language, keyboard, network, disk selection, progress, and restart stages.
 - Keep destructive disk operations explicit and guarded.
+- Include VMware open-vm-tools, desktop integration, and the VMware Xorg video driver.
+- Provide a guarded MBR-to-GPT conversion utility for supported disk layouts.
 - Improve boot branding, reliability, and hardware compatibility.
 - Keep Chromium preinstalled and available from the desktop.
 - Replace prototype components selectively when LokiOS-owned alternatives provide a real benefit. A custom init is **not a requirement**; systemd is acceptable.
