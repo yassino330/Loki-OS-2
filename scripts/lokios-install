@@ -43,6 +43,21 @@ if [[ -z "$CONFIRM" ]]; then
 fi
 [[ "$CONFIRM" == "ERASE $(basename "$DISK")" ]] || fail "Confirmation did not match. Nothing was changed."
 
+PARTITION_TABLE="$(parted -s "$DISK" print 2>/dev/null | awk -F': ' '/Partition Table:/ {print $2; exit}')"
+case "$PARTITION_TABLE" in
+  msdos)
+    say "MBR partition table detected. Converting the selected disk to a fresh GPT layout (all old partitions will be erased)..."
+    ;;
+  gpt)
+    say "GPT partition table detected. Rebuilding it for a clean LokiOS installation..."
+    ;;
+  "")
+    say "No recognized partition table detected. Creating a fresh GPT layout..."
+    ;;
+  *)
+    say "Partition table '$PARTITION_TABLE' detected. Replacing it with GPT as requested..."
+    ;;
+esac
 say "Partitioning $DISK (GPT, 512 MiB EFI, remaining space for LokiOS)..."
 if findmnt -rn -S "$DISK" >/dev/null || lsblk -nrpo MOUNTPOINT "$DISK" | grep -q .; then
   fail "The selected disk has mounted filesystems. Unmount them before installing."
