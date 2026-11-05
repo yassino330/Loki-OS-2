@@ -81,7 +81,7 @@ chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-inst
   firmware-iwlwifi firmware-realtek firmware-atheros firmware-brcm80211 \
   firmware-mediatek intel-microcode amd64-microcode \
   fonts-dejavu-core fonts-liberation2 fonts-noto-core fonts-noto-color-emoji x11-xserver-utils chromium \
-  parted gdisk dosfstools grub-efi-amd64 grub2-common efibootmgr \
+  parted gdisk dosfstools e2fsprogs fdisk util-linux grub-efi-amd64 grub2-common efibootmgr \
   open-vm-tools open-vm-tools-desktop xserver-xorg-video-vmware \
   qt6-qpa-plugins qml6-module-qtquick qml6-module-qtquick-controls \
   qml6-module-qtquick-window qml6-module-qtquick-templates \
