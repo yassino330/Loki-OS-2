@@ -12,6 +12,7 @@ on:
       - "scripts/build-kernel.sh"
       - "scripts/build-image.sh"
       - "scripts/lokios-install"
+      - "scripts/lokios-mbr2gpt"
       - "scripts/test-boot-qemu.sh"
       - "scripts/lokios-vm-health"
       - "src/**"
