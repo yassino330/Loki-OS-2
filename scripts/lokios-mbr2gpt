@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+fail() { printf "LokiOS MBR to GPT: %s\n" "$*" >&2; exit 1; }
+[[ $EUID -eq 0 ]] || fail "Run with sudo."
+for cmd in sgdisk sfdisk lsblk blockdev partprobe; do command -v "$cmd" >/dev/null || fail "Missing command: $cmd"; done
+DISK="${1:-}"
+CONFIRM="${2:-}"
+[[ -n "$DISK" && -b "$DISK" ]] || fail "Usage: sudo lokios-mbr2gpt /dev/sdX"
+[[ "$(lsblk -dnro TYPE "$DISK")" == "disk" ]] || fail "Select a whole disk, not a partition."
+[[ "$(lsblk -dnro PTTYPE "$DISK")" == "dos" ]] || fail "Selected disk is not MBR/DOS partitioned."
+if lsblk -nrpo MOUNTPOINT "$DISK" | grep -q "[^[:space:]]"; then fail "A partition is mounted. Unmount it first."; fi
+TABLE="$(sfdisk --dump "$DISK")"
+if grep -Eiq "type=(5|f|85)(,|$)" <<<"$TABLE"; then fail "Extended/logical MBR layouts are not supported."; fi
+PART_COUNT="$(lsblk -lnpo TYPE "$DISK" | awk '$1=="part"{n++} END{print n+0}')"
+(( PART_COUNT >= 1 && PART_COUNT <= 4 )) || fail "Expected 1–4 primary partitions; refusing unusual layout."
+printf "\nTarget disk: %s\n" "$DISK"
+lsblk -dpno SIZE,MODEL "$DISK"
+printf "\nBack up important data first. This changes the partition table, not filesystems.\n"
+[[ "$CONFIRM" == "CONVERT $(basename "$DISK") TO GPT" ]] || {
+  printf "To confirm, run:\n  sudo lokios-mbr2gpt %q %q\n" "$DISK" "CONVERT $(basename "$DISK") TO GPT"
+  exit 2
+}
+BACKUP_DIR="/root/lokios-partition-backups"
+mkdir -p -m 0700 "$BACKUP_DIR"
+STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+printf "%s\n" "$TABLE" > "$BACKUP_DIR/$(basename "$DISK")-$STAMP.sfdisk"
+sgdisk --backup="$BACKUP_DIR/$(basename "$DISK")-$STAMP.gpt-backup" "$DISK"
+sgdisk --mbrtogpt "$DISK"
+partprobe "$DISK" || true
+udevadm settle 2>/dev/null || true
+sgdisk --verify "$DISK" || fail "GPT verification failed. Stop and inspect the disk; do not format it."
+printf "\nGPT conversion and verification completed. Backups: %s\n" "$BACKUP_DIR"
+printf "You must separately ensure the OS has an EFI System Partition and UEFI bootloader before switching firmware to UEFI mode.\n"
