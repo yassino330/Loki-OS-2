@@ -81,7 +81,8 @@ chroot "$ROOTFS" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-inst
   firmware-iwlwifi firmware-realtek firmware-atheros firmware-brcm80211 \
   firmware-mediatek intel-microcode amd64-microcode \
   fonts-dejavu-core fonts-liberation2 fonts-noto-core fonts-noto-color-emoji x11-xserver-utils chromium \
-  parted dosfstools grub-efi-amd64 grub2-common efibootmgr \
+  parted gdisk dosfstools grub-efi-amd64 grub2-common efibootmgr \
+  open-vm-tools open-vm-tools-desktop xserver-xorg-video-vmware \
   qt6-qpa-plugins qml6-module-qtquick qml6-module-qtquick-controls \
   qml6-module-qtquick-window qml6-module-qtquick-templates \
   cmake ninja-build g++ qt6-base-dev qt6-declarative-dev qt6-declarative-dev-tools \
@@ -92,6 +93,7 @@ chroot "$ROOTFS" cmake -S /usr/src/lokios -B /tmp/lokios-build -G Ninja -DCMAKE_
 chroot "$ROOTFS" cmake --build /tmp/lokios-build --parallel 2
 install -D -m 0755 "$ROOTFS/tmp/lokios-build/lokios" "$ROOTFS/usr/local/bin/lokios"
 install -D -m 0755 "$ROOT_DIR/scripts/lokios-install" "$ROOTFS/usr/local/sbin/lokios-install"
+install -D -m 0755 "$ROOT_DIR/scripts/lokios-mbr2gpt" "$ROOTFS/usr/local/sbin/lokios-mbr2gpt"
 rm -rf "$ROOTFS/usr/src/lokios" "$ROOTFS/tmp/lokios-build"
 
 
@@ -123,7 +125,7 @@ fi
 # Passwordless local desktop: LightDM logs the live user in automatically, and
 # administrative actions launched from the desktop do not prompt for a password.
 install -d -m 0750 "$ROOTFS/etc/sudoers.d"
-printf '%s\n' 'loki ALL=(root) NOPASSWD: /usr/local/sbin/lokios-install' > "$ROOTFS/etc/sudoers.d/lokios-loki"
+printf '%s\n' 'loki ALL=(root) NOPASSWD: /usr/local/sbin/lokios-install, /usr/local/sbin/lokios-mbr2gpt' > "$ROOTFS/etc/sudoers.d/lokios-loki"
 chmod 0440 "$ROOTFS/etc/sudoers.d/lokios-loki"
 chroot "$ROOTFS" visudo -cf /etc/sudoers
 
@@ -216,6 +218,7 @@ chroot "$ROOTFS" systemctl enable lightdm
 chroot "$ROOTFS" systemctl is-enabled lightdm >/dev/null
 chroot "$ROOTFS" systemctl enable NetworkManager
 chroot "$ROOTFS" systemctl enable bluetooth
+chroot "$ROOTFS" systemctl enable vmtoolsd.service
 
 # Only QEMU guests run this serial health check. It confirms the real LightDM
 # desktop and waits for an injected keyboard event; physical PCs skip it.
