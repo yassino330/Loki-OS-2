@@ -9,6 +9,11 @@ CONFIRM="${2:-}"
 [[ "$(lsblk -dnro TYPE "$DISK")" == "disk" ]] || fail "Select a whole disk, not a partition."
 [[ "$(lsblk -dnro PTTYPE "$DISK")" == "dos" ]] || fail "Selected disk is not MBR/DOS partitioned."
 if lsblk -nrpo MOUNTPOINT "$DISK" | grep -q "[^[:space:]]"; then fail "A partition is mounted. Unmount it first."; fi
+while read -r swapdev; do
+  [[ -n "$swapdev" ]] || continue
+  parent="$(lsblk -dnro PKNAME "$swapdev" 2>/dev/null || true)"
+  [[ -z "$parent" || "/dev/$parent" != "$DISK" ]] || fail "A partition on this disk is active swap."
+done < <(swapon --show=NAME --noheadings 2>/dev/null || true)
 TABLE="$(sfdisk --dump "$DISK")"
 if grep -Eiq "type=(5|f|85)(,|$)" <<<"$TABLE"; then fail "Extended/logical MBR layouts are not supported."; fi
 PART_COUNT="$(lsblk -lnpo TYPE "$DISK" | awk '$1=="part"{n++} END{print n+0}')"
