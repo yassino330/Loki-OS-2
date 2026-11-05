@@ -9,8 +9,12 @@ Window {
     minimumWidth: 960
     minimumHeight: 640
     visible: true
-    visibility: root.installerOpen ? Window.FullScreen : Window.Maximized
+    flags: Qt.Window | Qt.FramelessWindowHint
+    visibility: Window.FullScreen
     title: "LokiOS"
+    // LokiOS is the desktop shell, not an ordinary app window. Keep it fullscreen
+    // so a window-manager title bar and its close button cannot cover the desktop.
+    onClosing: function(close) { close.accepted = false }
     color: "#080d18"
     property string activePanel: "home"
     property bool welcomeVisible: false
