@@ -218,7 +218,7 @@ chroot "$ROOTFS" systemctl enable lightdm
 chroot "$ROOTFS" systemctl is-enabled lightdm >/dev/null
 chroot "$ROOTFS" systemctl enable NetworkManager
 chroot "$ROOTFS" systemctl enable bluetooth
-chroot "$ROOTFS" systemctl enable vmtoolsd.service
+chroot "$ROOTFS" systemctl enable open-vm-tools.service
 
 # Only QEMU guests run this serial health check. It confirms the real LightDM
 # desktop and waits for an injected keyboard event; physical PCs skip it.
