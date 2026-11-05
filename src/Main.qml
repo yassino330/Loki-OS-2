@@ -10,10 +10,10 @@ Window {
     minimumHeight: 640
     visible: true
     visibility: root.installerOpen ? Window.FullScreen : Window.Maximized
-    title: "LokiOS Beta Preview"
+    title: "LokiOS"
     color: "#080d18"
     property string activePanel: "home"
-    property bool welcomeVisible: true
+    property bool welcomeVisible: false
     property bool menuOpen: false
     property bool installerOpen: false
     property bool quickOpen: false
@@ -79,7 +79,7 @@ Window {
         Row {
             anchors.right: parent.right; anchors.rightMargin: 18
             anchors.verticalCenter: parent.verticalCenter; spacing: 15
-            Label { text: "LokiOS Beta Preview"; color: "#9eb6c9"; font.pixelSize: 12 }
+            Label { text: "LIQUID GLASS"; color: "#9eb6c9"; font.pixelSize: 10; font.letterSpacing: 1.8 }
             ToolButton {
                 text: "⌃"; font.pixelSize: 18
                 palette.buttonText: "#eaf1ff"
@@ -93,37 +93,112 @@ Window {
         }
     }
 
-    // Desktop welcome / home content
+    // Modern LokiOS dashboard
     Column {
-        anchors.centerIn: parent; spacing: 12
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.verticalCenterOffset: -12
+        width: Math.min(parent.width - 100, 900)
+        spacing: 22
         visible: root.activePanel === "home"
         opacity: visible ? 1 : 0
-        Behavior on opacity { NumberAnimation { duration: 220 } }
-        Label { anchors.horizontalCenter: parent.horizontalCenter; text: "◈"; color: "#9fcaff"; font.pixelSize: 46 }
-        Label {
-            anchors.horizontalCenter: parent.horizontalCenter
-            text: "Good to see you."
-            color: "#f4f7ff"; font.pixelSize: 42; font.weight: Font.Light
-        }
-        Label {
-            anchors.horizontalCenter: parent.horizontalCenter
-            text: "A calmer space for everything you do."
-            color: "#a9b8ce"; font.pixelSize: 16
-        }
+        Behavior on opacity { NumberAnimation { duration: 240 } }
+
         Row {
-            anchors.horizontalCenter: parent.horizontalCenter; spacing: 10
-            Button {
-                text: "Explore apps"
-                onClicked: root.activePanel = "apps"
-                contentItem: Label { text: parent.text; color: "#102033"; font.weight: Font.DemiBold; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
-                background: Rectangle { radius: 13; color: "#b9d9ff" }
+            width: parent.width
+            spacing: 24
+            Column {
+                width: parent.width * 0.62
+                spacing: 9
+                Label {
+                    text: Qt.formatDateTime(new Date(), "dddd, d MMMM")
+                    color: "#a9c4e4"; font.pixelSize: 14; font.letterSpacing: 1.1
+                }
+                Label {
+                    text: "Your space.\nYour pace."
+                    color: "#f5f8ff"; font.pixelSize: 54; font.weight: Font.Light
+                    lineHeight: 0.98
+                }
+                Label {
+                    text: "Welcome back to a desktop that feels like yours."
+                    color: "#b6c6dc"; font.pixelSize: 16
+                }
+                Row {
+                    spacing: 10
+                    Button {
+                        text: "Open applications"
+                        onClicked: root.activePanel = "apps"
+                        contentItem: Label { text: parent.text; color: "#102033"; font.weight: Font.DemiBold; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
+                        background: Rectangle { radius: 14; gradient: Gradient { GradientStop { position: 0; color: "#e2f2ff" } GradientStop { position: 1; color: "#9bcaff" } } }
+                    }
+                    Button {
+                        text: "Personalize"
+                        onClicked: root.activePanel = "settings"
+                        contentItem: Label { text: parent.text; color: "#edf5ff"; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
+                        background: Rectangle { radius: 14; color: "#24ffffff"; border.color: "#45ffffff" }
+                    }
+                }
             }
-            Button {
-                text: "Personalize"
-                onClicked: root.activePanel = "settings"
-                contentItem: Label { text: parent.text; color: "#eaf2ff"; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
-                background: Rectangle { radius: 13; color: "#25ffffff"; border.color: "#35ffffff" }
+            GlassPanel {
+                width: parent.width * 0.34; height: 190
+                cornerRadius: 25; glassOpacity: 0.66
+                Column {
+                    anchors.fill: parent; anchors.margins: 20; spacing: 8
+                    Label { text: "LOCAL TIME"; color: "#9bb8d9"; font.pixelSize: 10; font.letterSpacing: 1.8 }
+                    Label { text: Qt.formatDateTime(new Date(), "h:mm"); color: "#f4f8ff"; font.pixelSize: 54; font.weight: Font.Light }
+                    Label { text: Qt.formatDateTime(new Date(), "dddd  •  d MMMM"); color: "#b8c9df"; font.pixelSize: 13 }
+                    Rectangle { width: parent.width; height: 1; color: "#28ffffff" }
+                    Label { text: "LokiOS  ·  Liquid Glass"; color: "#9fcaff"; font.pixelSize: 12 }
+                }
             }
+        }
+
+        Row {
+            width: parent.width; spacing: 14
+            GlassPanel {
+                width: (parent.width - 28) / 3; height: 118; cornerRadius: 21; glassOpacity: 0.58
+                Row {
+                    anchors.fill: parent; anchors.margins: 17; spacing: 13
+                    Label { text: "◎"; color: "#a9d2ff"; font.pixelSize: 30; anchors.verticalCenter: parent.verticalCenter }
+                    Column {
+                        anchors.verticalCenter: parent.verticalCenter; spacing: 5
+                        Label { text: "Browse the web"; color: "#f3f7ff"; font.pixelSize: 14; font.weight: Font.DemiBold }
+                        Label { text: "Chromium is ready"; color: "#9eafc7"; font.pixelSize: 11 }
+                    }
+                }
+                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: SystemActions.launch("chromium") }
+            }
+            GlassPanel {
+                width: (parent.width - 28) / 3; height: 118; cornerRadius: 21; glassOpacity: 0.58
+                Row {
+                    anchors.fill: parent; anchors.margins: 17; spacing: 13
+                    Label { text: "▰"; color: "#b5aaff"; font.pixelSize: 29; anchors.verticalCenter: parent.verticalCenter }
+                    Column {
+                        anchors.verticalCenter: parent.verticalCenter; spacing: 5
+                        Label { text: "Your files"; color: "#f3f7ff"; font.pixelSize: 14; font.weight: Font.DemiBold }
+                        Label { text: "Open your workspace"; color: "#9eafc7"; font.pixelSize: 11 }
+                    }
+                }
+                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: SystemActions.launch("pcmanfm") }
+            }
+            GlassPanel {
+                width: (parent.width - 28) / 3; height: 118; cornerRadius: 21; glassOpacity: 0.58
+                Row {
+                    anchors.fill: parent; anchors.margins: 17; spacing: 13
+                    Label { text: "✧"; color: "#ffc98e"; font.pixelSize: 30; anchors.verticalCenter: parent.verticalCenter }
+                    Column {
+                        anchors.verticalCenter: parent.verticalCenter; spacing: 5
+                        Label { text: "Make it yours"; color: "#f3f7ff"; font.pixelSize: 14; font.weight: Font.DemiBold }
+                        Label { text: "Tune your desktop"; color: "#9eafc7"; font.pixelSize: 11 }
+                    }
+                }
+                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.activePanel = "settings" }
+            }
+        }
+        Label {
+            text: "LOKI OS  /  A NEW KIND OF DESKTOP"
+            color: "#7087a5"; font.pixelSize: 10; font.letterSpacing: 2.2
+            anchors.horizontalCenter: parent.horizontalCenter
         }
     }
 
