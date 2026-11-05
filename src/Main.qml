@@ -51,27 +51,28 @@ Window {
     Rectangle {
         anchors.fill: parent
         gradient: Gradient {
-            GradientStop { position: 0; color: "#172a48" }
-            GradientStop { position: 0.42; color: "#101a31" }
-            GradientStop { position: 1; color: "#070b17" }
+            GradientStop { position: 0; color: "#263d68" }
+            GradientStop { position: 0.38; color: "#111d38" }
+            GradientStop { position: 0.72; color: "#0b1225" }
+            GradientStop { position: 1; color: "#050914" }
         }
     }
     Rectangle {
-        width: 760; height: 760; radius: 380
+        width: 900; height: 900; radius: 450
         x: parent.width * 0.58 - width / 2; y: parent.height * 0.12 - height / 2
-        color: "#4b9cff"; opacity: 0.19
+        color: "#4b9cff"; opacity: 0.23
         Behavior on opacity { NumberAnimation { duration: 900 } }
     }
     Rectangle {
-        width: 520; height: 520; radius: 260
+        width: 620; height: 620; radius: 310
         x: parent.width * 0.12 - width / 2; y: parent.height * 0.78 - height / 2
-        color: "#8b5cf6"; opacity: 0.16
+        color: "#9b6cff"; opacity: 0.20
     }
 
     // Floating system bar
     GlassPanel {
         anchors.top: parent.top; anchors.left: parent.left; anchors.right: parent.right
-        anchors.margins: 16; height: 58; cornerRadius: 19; glassOpacity: 0.72
+        anchors.margins: 22; height: 64; cornerRadius: 22; glassOpacity: 0.78
         Row {
             anchors.left: parent.left; anchors.leftMargin: 20
             anchors.verticalCenter: parent.verticalCenter; spacing: 12
@@ -119,12 +120,12 @@ Window {
                     color: "#a9c4e4"; font.pixelSize: 14; font.letterSpacing: 1.1
                 }
                 Label {
-                    text: "Your space.\nYour pace."
-                    color: "#f5f8ff"; font.pixelSize: 54; font.weight: Font.Light
+                    text: "Your world.\nIn focus."
+                    color: "#f5f8ff"; font.pixelSize: 62; font.weight: Font.Light
                     lineHeight: 0.98
                 }
                 Label {
-                    text: "A calmer, clearer space for everything you do."
+                    text: "A modern desktop, made to feel effortless."
                     color: "#b6c6dc"; font.pixelSize: 16
                 }
                 Row {
@@ -320,11 +321,11 @@ Window {
     // Bottom dock
     GlassPanel {
         id: dock
-        width: dockRow.implicitWidth + 30; height: 76
+        width: dockRow.implicitWidth + 38; height: 88
         anchors.horizontalCenter: parent.horizontalCenter; anchors.bottom: parent.bottom
-        anchors.bottomMargin: 22; cornerRadius: 25; glassOpacity: 0.86
+        anchors.bottomMargin: 26; cornerRadius: 29; glassOpacity: 0.92
         Row {
-            id: dockRow; anchors.centerIn: parent; spacing: 7
+            id: dockRow; anchors.centerIn: parent; spacing: 9
             Repeater {
                 model: [
                     {label:"◈", name:"Home", panel:"home"},
@@ -334,9 +335,10 @@ Window {
                 ]
                 delegate: ToolButton {
                     required property var modelData
-                    width: 56; height: 56; text: modelData.label; font.pixelSize: 24
+                    width: 62; height: 62; text: modelData.label; font.pixelSize: 26
                     palette.buttonText: "#edf4ff"
-                    background: Rectangle { radius: 17; color: parent.hovered ? "#30ffffff" : "transparent" }
+                    background: Rectangle { radius: 19; color: modelData.panel === root.activePanel ? "#42a9d7ff" : (parent.hovered ? "#30ffffff" : "transparent"); border.color: modelData.panel === root.activePanel ? "#65c8e8ff" : "transparent" }
+                    contentItem: Text { text: parent.text; color: "#f2f7ff"; font: parent.font; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
                     ToolTip.visible: hovered; ToolTip.text: modelData.name
                     onClicked: { root.activePanel = modelData.panel; root.quickOpen = false }
                 }
