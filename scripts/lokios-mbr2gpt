@@ -11,6 +11,7 @@ CONFIRM="${2:-}"
 if lsblk -nrpo MOUNTPOINT "$DISK" | grep -q "[^[:space:]]"; then fail "A partition is mounted. Unmount it first."; fi
 while read -r swapdev; do
   [[ -n "$swapdev" ]] || continue
+  [[ "$(readlink -f "$swapdev")" != "$(readlink -f "$DISK")" ]] || fail "The whole disk is active swap."
   parent="$(lsblk -dnro PKNAME "$swapdev" 2>/dev/null || true)"
   [[ -z "$parent" || "/dev/$parent" != "$DISK" ]] || fail "A partition on this disk is active swap."
 done < <(swapon --show=NAME --noheadings 2>/dev/null || true)
@@ -29,8 +30,8 @@ BACKUP_DIR="/root/lokios-partition-backups"
 mkdir -p -m 0700 "$BACKUP_DIR"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 printf "%s\n" "$TABLE" > "$BACKUP_DIR/$(basename "$DISK")-$STAMP.sfdisk"
-sgdisk --backup="$BACKUP_DIR/$(basename "$DISK")-$STAMP.gpt-backup" "$DISK"
 sgdisk --mbrtogpt "$DISK"
+sgdisk --backup="$BACKUP_DIR/$(basename "$DISK")-$STAMP.gpt-backup" "$DISK"
 partprobe "$DISK" || true
 udevadm settle 2>/dev/null || true
 sgdisk --verify "$DISK" || fail "GPT verification failed. Stop and inspect the disk; do not format it."
