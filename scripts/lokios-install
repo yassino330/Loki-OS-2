@@ -36,11 +36,12 @@ if [[ -n "$LIVE_SOURCE" && -b "$LIVE_SOURCE" ]]; then
   [[ "$(readlink -f "$DISK")" != "$(readlink -f "$LIVE_DISK")" ]] || fail "That disk contains the currently running live media."
 fi
 DISK_BYTES="$(blockdev --getsize64 "$DISK")"
-(( DISK_BYTES >= 16 * 1024 * 1024 * 1024 )) || fail "The target disk must be at least 16 GiB."
+(( DISK_BYTES >= 8 * 1000 * 1000 * 1000 )) || fail "The target disk must be at least 8 GB."
 printf '\nYou selected: %s\n' "$DISK"
 lsblk -dpno SIZE,MODEL "$DISK"
 CONFIRM="${2:-}"
 if [[ -z "$CONFIRM" ]]; then
+  [[ -t 0 ]] || fail "The installer did not receive the erase confirmation from the desktop. Close and reopen the installer, then type ERASE $(basename "$DISK")."
   read -r -p "To permanently erase this disk, type exactly: ERASE $(basename "$DISK"): " CONFIRM
 fi
 [[ "$CONFIRM" == "ERASE $(basename "$DISK")" ]] || fail "Confirmation did not match. Nothing was changed."
