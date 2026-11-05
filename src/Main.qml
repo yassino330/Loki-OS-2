@@ -47,21 +47,21 @@ Window {
     Rectangle {
         anchors.fill: parent
         gradient: Gradient {
-            GradientStop { position: 0; color: "#101a2b" }
-            GradientStop { position: 0.48; color: "#0b1422" }
-            GradientStop { position: 1; color: "#070b13" }
+            GradientStop { position: 0; color: "#172a48" }
+            GradientStop { position: 0.42; color: "#101a31" }
+            GradientStop { position: 1; color: "#070b17" }
         }
     }
     Rectangle {
         width: 760; height: 760; radius: 380
         x: parent.width * 0.58 - width / 2; y: parent.height * 0.12 - height / 2
-        color: "#244d86"; opacity: 0.16
+        color: "#4b9cff"; opacity: 0.19
         Behavior on opacity { NumberAnimation { duration: 900 } }
     }
     Rectangle {
         width: 520; height: 520; radius: 260
         x: parent.width * 0.12 - width / 2; y: parent.height * 0.78 - height / 2
-        color: "#563a86"; opacity: 0.12
+        color: "#8b5cf6"; opacity: 0.16
     }
 
     // Floating system bar
@@ -120,7 +120,7 @@ Window {
                     lineHeight: 0.98
                 }
                 Label {
-                    text: "Welcome back to a desktop that feels like yours."
+                    text: "A calmer, clearer space for everything you do."
                     color: "#b6c6dc"; font.pixelSize: 16
                 }
                 Row {
